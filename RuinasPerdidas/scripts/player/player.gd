@@ -152,7 +152,7 @@ func _state_move(delta: float) -> void:
     var speed: float = JOG_SPEED
     if sprint:
         speed = SPRINT_SPEED
-    elif mag < 0.5:
+    elif mag < 0.90:
         speed = WALK_SPEED
     var target_vel := Vector3.ZERO
     if mag > 0.05:
