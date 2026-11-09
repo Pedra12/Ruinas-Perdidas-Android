@@ -13,8 +13,8 @@ const SETTINGS_PATH := "user://settings.cfg"
 const GEMS_REQUIRED := 3
 const QUALITY_NAMES: Array[String] = ["Baixa", "Média", "Alta"]
 const RENDER_SCALES: Array[float] = [0.6, 0.8, 1.0]
-const SHADOW_ATLAS: Array[int] = [1024, 2048, 4096]
-const SHADOW_DISTANCE: Array[float] = [0.0, 40.0, 60.0]
+const SHADOW_ATLAS: Array[int] = [1024, 2048, 2048]
+const SHADOW_DISTANCE: Array[float] = [0.0, 40.0, 45.0]
 const VEG_FACTOR: Array[float] = [0.45, 0.75, 1.0]
 
 var gems := 0
