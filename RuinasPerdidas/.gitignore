@@ -1,0 +1,10 @@
+.godot/
+.import/
+*.translation
+export_presets.cfg.bak
+build/
+*.apk
+*.aab
+*.keystore
+*.jks
+.mono/

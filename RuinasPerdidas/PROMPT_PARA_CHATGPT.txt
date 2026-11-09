@@ -1,0 +1,15 @@
+Você vai finalizar e validar um jogo 3D para Android feito em Godot 4.3+ (GDScript), chamado "Ruínas Perdidas".
+
+Este repositório já contém um projeto completo (código, estrutura, sons gerados e documentação). Os assets 3D (.glb/.gltf) são os mesmos que já estão no meu GitHub.
+
+Leia, NESTA ORDEM, antes de mexer em qualquer coisa:
+1. AGENTS.md  (regras de trabalho)
+2. TAREFAS_PARA_CHATGPT.md  (o que fazer, passo a passo, e critérios de aceite)
+3. docs/ARQUITETURA.md  (como o código está organizado)
+
+Regras principais:
+- NÃO recrie o projeto do zero. Corrija e melhore o que existe.
+- Instale o Godot 4.3+ (headless) e rode ./tools/validar.sh. Só diga que algo funciona depois de executar e ler a saída.
+- Corrija todos os erros e avisos de GDScript, mantendo a arquitetura.
+- Meta: 60 FPS em celular Android intermediário, visual nítido, zero erros no console.
+- No final, exporte o APK debug (build/RuinasPerdidas.apk) e me entregue um relatório honesto: o que foi testado, o que não foi, e o que precisa ser testado no celular real.
