@@ -19,9 +19,30 @@ static func instance_model(path: String) -> Node3D:
     if packed != null:
         var inst: Node = packed.instantiate()
         if inst is Node3D:
-            return inst
+            var model := inst as Node3D
+            var meshes: Array[Node] = model.find_children("*", "MeshInstance3D", true, false)
+            if model is MeshInstance3D:
+                meshes.append(model)
+            var has_mesh := false
+            for child in meshes:
+                var mi := child as MeshInstance3D
+                if mi != null and mi.mesh != null:
+                    has_mesh = true
+                    mi.visible = true
+                    mi.layers = 1
+            if has_mesh:
+                _force_visible(model)
+                return model
+            push_warning("Modelo sem malha renderizável: %s" % path)
         inst.queue_free()
     return _placeholder()
+
+
+static func _force_visible(node: Node) -> void:
+    if node is Node3D:
+        (node as Node3D).visible = true
+    for child in node.get_children():
+        _force_visible(child)
 
 
 static func _placeholder() -> Node3D:
