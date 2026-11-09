@@ -1,0 +1,135 @@
+name: Auditoria recursiva completa de assets
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/auditoria-recursiva-assets.yml'
+      - '*.zip'
+      - '**/*.zip'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório completo
+        uses: actions/checkout@v4
+      - name: Baixar pacote grande do Release
+        shell: bash
+        run: |
+          curl -fL --retry 3 "https://github.com/Pedra12/Ruinas-Perdidas-Android/releases/download/V1.0.0/Stylized.Nature.MegaKit.Standard.zip" -o /tmp/Stylized.Nature.MegaKit.Standard.zip
+      - name: Inspecionar arquivos, pastas e ZIPs aninhados recursivamente
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, json, zipfile, hashlib, io, pathlib, collections
+          root = pathlib.Path('.')
+          report = {
+              'repository_files': [],
+              'archives': [],
+              'errors': [],
+              'extensions': collections.Counter(),
+              'nested_archives': 0,
+              'total_archive_entries': 0
+          }
+          skip = {'.git', '.godot', '.import'}
+          for base, dirs, files in os.walk(root):
+              dirs[:] = [d for d in dirs if d not in skip]
+              for name in files:
+                  p = pathlib.Path(base) / name
+                  try:
+                      size = p.stat().st_size
+                      ext = p.suffix.lower() or '[sem extensão]'
+                      report['extensions'][ext] += 1
+                      report['repository_files'].append({'path': str(p), 'bytes': size, 'extension': ext})
+                  except Exception as e:
+                      report['errors'].append(f'FILE {p}: {e}')
+
+          def inspect_zip(label, data, depth=0):
+              if depth > 10:
+                  report['errors'].append(f'MAX_DEPTH: {label}')
+                  return
+              entry = {'path': label, 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest(), 'depth': depth, 'entries': [], 'integrity': 'OK'}
+              try:
+                  with zipfile.ZipFile(io.BytesIO(data)) as z:
+                      bad = z.testzip()
+                      if bad:
+                          entry['integrity'] = 'CORRUPT: ' + bad
+                          report['errors'].append(f'CORRUPT {label}: {bad}')
+                      for info in z.infolist():
+                          name = info.filename
+                          low = name.lower()
+                          unsafe = name.startswith('/') or '..' in pathlib.PurePosixPath(name).parts
+                          item = {'path': name, 'bytes': info.file_size, 'directory': info.is_dir(), 'unsafe_path': unsafe}
+                          entry['entries'].append(item)
+                          report['total_archive_entries'] += 1
+                          if unsafe:
+                              report['errors'].append(f'UNSAFE PATH {label} :: {name}')
+                          if low.endswith('.zip') and not info.is_dir():
+                              report['nested_archives'] += 1
+                              try:
+                                  nested = z.read(info)
+                                  inspect_zip(label + '!' + name, nested, depth + 1)
+                              except Exception as e:
+                                  report['errors'].append(f'NESTED ZIP {label}!{name}: {e}')
+              except Exception as e:
+                  entry['integrity'] = 'ERROR: ' + str(e)
+                  report['errors'].append(f'ZIP {label}: {e}')
+              report['archives'].append(entry)
+
+          seen = set()
+          for p in sorted(root.rglob('*.zip')):
+              if any(part in skip for part in p.parts):
+                  continue
+              try:
+                  data = p.read_bytes()
+                  seen.add(str(p))
+                  inspect_zip(str(p), data)
+              except Exception as e:
+                  report['errors'].append(f'READ {p}: {e}')
+          release = pathlib.Path('/tmp/Stylized.Nature.MegaKit.Standard.zip')
+          inspect_zip('GITHUB_RELEASE/' + release.name, release.read_bytes())
+
+          # Index all project text files for resource paths and missing-file candidates.
+          text_ext = {'.gd','.tscn','.tres','.godot','.cfg','.json','.md','.txt','.import'}
+          project_text = []
+          for p in pathlib.Path('RuinasPerdidas').rglob('*'):
+              if p.is_file() and p.suffix.lower() in text_ext and p.stat().st_size < 2_000_000:
+                  try:
+                      project_text.append({'path': str(p), 'text': p.read_text(encoding='utf-8', errors='replace')})
+                  except Exception as e:
+                      report['errors'].append(f'TEXT {p}: {e}')
+          report['project_text_files'] = [{'path': x['path'], 'bytes': len(x['text'])} for x in project_text]
+          report['summary'] = {
+              'repository_file_count': len(report['repository_files']),
+              'archive_count_in_repo': len(seen),
+              'archive_count_including_release_and_nested': len(report['archives']),
+              'nested_zip_count': report['nested_archives'],
+              'total_archive_entries_including_nested': report['total_archive_entries'],
+              'error_count': len(report['errors']),
+              'extension_counts': dict(report['extensions'])
+          }
+          pathlib.Path('audit-recursive.json').write_text(json.dumps(report, ensure_ascii=False, indent=2, default=dict), encoding='utf-8')
+          lines = [json.dumps(report['summary'], ensure_ascii=False, indent=2), '', 'ARCHIVES']
+          for a in report['archives']:
+              lines.append(f"\n## {a['path']} | {a['bytes']} bytes | depth={a['depth']} | {a['integrity']} | entries={len(a['entries'])}")
+              for e in a['entries']:
+                  lines.append(f"{e['bytes']:>12}  {e['path']}")
+          lines += ['', 'ERRORS'] + report['errors']
+          pathlib.Path('audit-recursive.txt').write_text('\n'.join(lines), encoding='utf-8')
+          print(json.dumps(report['summary'], ensure_ascii=False, indent=2))
+          if report['errors']:
+              print('\n'.join(report['errors']))
+          PY
+      - name: Publicar inventário completo
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruinas-perdidas-auditoria-recursiva-completa
+          path: |
+            audit-recursive.json
+            audit-recursive.txt
+          if-no-files-found: error
+          retention-days: 14
