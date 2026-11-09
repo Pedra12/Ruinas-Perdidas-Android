@@ -25,9 +25,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y 7zip python3-pil unzip
-      - name: Baixar pacote Nature do Release
+      - name: Baixar pacote Nature e mapa original do Release
         run: |
           curl -fL --retry 3 "https://github.com/Pedra12/Ruinas-Perdidas-Android/releases/download/V1.0.0/Stylized.Nature.MegaKit.Standard.zip" -o Stylized.Nature.MegaKit.Standard.zip
+          curl -fL --retry 3 "https://github.com/Pedra12/Ruinas-Perdidas-Android/releases/download/V1.0.0/rua-bela-vista-29214-100-guarapari-sol-nascente-glb.zip" -o /tmp/mapa-cidade.zip
+          mkdir -p RuinasPerdidas/assets/maps
+          unzip -oq /tmp/mapa-cidade.zip -d /tmp/mapa-cidade
+          install -m 644 /tmp/mapa-cidade/rua-bela-vista-29214-100-guarapari-sol-nascente.glb RuinasPerdidas/assets/maps/rua-bela-vista-29214-100-guarapari-sol-nascente.glb
+          test -s RuinasPerdidas/assets/maps/rua-bela-vista-29214-100-guarapari-sol-nascente.glb
       - name: Extrair assets originais sem substituir o projeto
         working-directory: RuinasPerdidas
         run: |
