@@ -37,19 +37,19 @@ const RUIN_PIECES := [
 
 # Vegetação: [arquivo, quantidade(Alta), escala mín, escala máx, sombra, dist. visível, grande?, colisão]
 const VEGETATION := [
-    ["CommonTree_1.gltf", 34, 1.0, 1.5, true, 95.0, true, true],
-    ["CommonTree_3.gltf", 28, 1.0, 1.5, true, 95.0, true, true],
-    ["CommonTree_5.gltf", 24, 1.0, 1.5, true, 95.0, true, true],
-    ["DeadTree_1.gltf", 8, 0.9, 1.2, true, 95.0, true, true],
-    ["Bush_Common.gltf", 70, 1.0, 1.7, false, 60.0, false, false],
-    ["Bush_Common_Flowers.gltf", 40, 1.0, 1.6, false, 60.0, false, false],
-    ["Grass_Common_Tall.gltf", 900, 0.6, 1.1, false, 42.0, false, false],
-    ["Grass_Wispy_Short.gltf", 700, 0.6, 1.1, false, 42.0, false, false],
-    ["Flower_3_Group.gltf", 120, 0.8, 1.3, false, 40.0, false, false],
-    ["Flower_4_Group.gltf", 120, 0.8, 1.3, false, 40.0, false, false],
-    ["Fern_1.gltf", 60, 0.18, 0.3, false, 50.0, false, false],
-    ["Mushroom_Common.gltf", 50, 1.0, 1.8, false, 35.0, false, false],
-    ["Pebble_Round_1.gltf", 70, 1.0, 2.0, false, 35.0, false, false],
+    ["CommonTree_1.gltf", 20, 1.0, 1.5, true, 72.0, true, true],
+    ["CommonTree_3.gltf", 16, 1.0, 1.5, true, 72.0, true, true],
+    ["CommonTree_5.gltf", 12, 1.0, 1.5, true, 72.0, true, true],
+    ["DeadTree_1.gltf", 4, 0.9, 1.2, true, 72.0, true, true],
+    ["Bush_Common.gltf", 30, 1.0, 1.7, false, 42.0, false, false],
+    ["Bush_Common_Flowers.gltf", 18, 1.0, 1.6, false, 42.0, false, false],
+    ["Grass_Common_Tall.gltf", 260, 0.6, 1.1, false, 28.0, false, false],
+    ["Grass_Wispy_Short.gltf", 180, 0.6, 1.1, false, 28.0, false, false],
+    ["Flower_3_Group.gltf", 55, 0.8, 1.3, false, 30.0, false, false],
+    ["Flower_4_Group.gltf", 55, 0.8, 1.3, false, 30.0, false, false],
+    ["Fern_1.gltf", 30, 0.18, 0.3, false, 34.0, false, false],
+    ["Mushroom_Common.gltf", 24, 1.0, 1.8, false, 28.0, false, false],
+    ["Pebble_Round_1.gltf", 35, 1.0, 2.0, false, 28.0, false, false],
 ]
 
 const ENEMY_KINDS := {
@@ -146,8 +146,8 @@ func _update_music() -> void:
 
 func _build_environment() -> void:
     var sky_mat := ProceduralSkyMaterial.new()
-    sky_mat.sky_top_color = Color(0.25, 0.5, 0.85)
-    sky_mat.sky_horizon_color = Color(0.7, 0.82, 0.9)
+    sky_mat.sky_top_color = Color(0.16, 0.34, 0.62)
+    sky_mat.sky_horizon_color = Color(0.48, 0.62, 0.72)
     sky_mat.ground_horizon_color = Color(0.6, 0.7, 0.65)
     sky_mat.ground_bottom_color = Color(0.25, 0.32, 0.25)
     var sky := Sky.new()
@@ -157,12 +157,12 @@ func _build_environment() -> void:
     env.background_mode = Environment.BG_SKY
     env.sky = sky
     env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-    env.ambient_light_energy = 1.0
-    env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+    env.ambient_light_energy = 0.68
+    env.tonemap_mode = Environment.TONE_MAPPER_ACES
     env.fog_enabled = true
-    env.fog_light_color = Color(0.68, 0.8, 0.88)
-    env.fog_density = 0.011
-    env.fog_sky_affect = 0.4
+    env.fog_light_color = Color(0.42, 0.52, 0.46)
+    env.fog_density = 0.0028
+    env.fog_sky_affect = 0.12
     var we := WorldEnvironment.new()
     we.environment = env
     add_child(we)
@@ -170,7 +170,7 @@ func _build_environment() -> void:
     var sun := DirectionalLight3D.new()
     sun.rotation_degrees = Vector3(-52.0, 35.0, 0.0)
     sun.light_color = Color(1.0, 0.95, 0.85)
-    sun.light_energy = 1.25
+    sun.light_energy = 1.0
     sun.shadow_enabled = Game.shadows_enabled()
     sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
     sun.directional_shadow_max_distance = maxf(Game.shadow_distance(), 10.0)
@@ -350,7 +350,7 @@ func _build_vegetation() -> void:
                 cs.shape = trunk
                 cs.position = Vector3(p.x, 2.0, p.z)
                 tree_body.add_child(cs)
-        var cell: float = 50.0 if big else 30.0
+        var cell: float = 55.0 if big else 42.0
         _scatter(mesh, xforms, cell, float(v[5]), bool(v[4]))
 
 
