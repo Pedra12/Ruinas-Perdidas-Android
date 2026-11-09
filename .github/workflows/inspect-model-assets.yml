@@ -1,0 +1,50 @@
+name: Inspect 3D model archives
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '*.zip'
+      - '.github/workflows/inspect-model-assets.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Inspect ZIP contents without modifying the project
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import zipfile, pathlib
+          archives = sorted(pathlib.Path('.').glob('*.zip'))
+          report = []
+          for archive in archives:
+              report.append(f'## {archive.name} ({archive.stat().st_size} bytes)')
+              try:
+                  with zipfile.ZipFile(archive) as z:
+                      bad = z.testzip()
+                      report.append(f'ZIP integrity: {"OK" if bad is None else "CORRUPT: "+bad}')
+                      entries = z.infolist()
+                      report.append(f'Entries: {len(entries)}')
+                      for item in entries:
+                          name = item.filename
+                          low = name.lower()
+                          if low.endswith(('.glb','.gltf','.bin','.png','.jpg','.jpeg','.webp','.tga','.wav','.ogg','.fbx','.blend')):
+                              report.append(f'{item.file_size:>12}  {name}')
+              except Exception as exc:
+                  report.append(f'ERROR: {exc}')
+              report.append('')
+          pathlib.Path('asset-archive-inventory.txt').write_text('\n'.join(report), encoding='utf-8')
+          print('\n'.join(report))
+          PY
+      - name: Upload inventory
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruinas-perdidas-inventario-modelos
+          path: asset-archive-inventory.txt
+          retention-days: 14
