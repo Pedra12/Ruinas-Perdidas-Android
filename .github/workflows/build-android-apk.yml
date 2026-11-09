@@ -79,12 +79,16 @@ jobs:
       - name: Importar projeto e exportar APK arm64
         run: |
           GODOT=/tmp/godot/Godot_v4.4.1-stable_linux.x86_64
-          "$GODOT" --headless --path RuinasPerdidas --import
-          mkdir -p RuinasPerdidas/build
-          "$GODOT" --headless --path RuinasPerdidas --export-debug "Android" RuinasPerdidas/build/RuinasPerdidas.apk
-          test -s RuinasPerdidas/build/RuinasPerdidas.apk
-          "$ANDROID_HOME/build-tools/35.0.1/aapt" dump badging RuinasPerdidas/build/RuinasPerdidas.apk | head -20
-          ls -lh RuinasPerdidas/build/RuinasPerdidas.apk
+          APK_PATH="$GITHUB_WORKSPACE/RuinasPerdidas/build/RuinasPerdidas.apk"
+          mkdir -p "$GITHUB_WORKSPACE/RuinasPerdidas/build" "$HOME/.android"
+          if [ ! -f "$HOME/.android/debug.keystore" ]; then
+            keytool -genkeypair -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+          "$GODOT" --headless --path "$GITHUB_WORKSPACE/RuinasPerdidas" --import
+          "$GODOT" --headless --path "$GITHUB_WORKSPACE/RuinasPerdidas" --export-debug "Android" "$APK_PATH"
+          test -s "$APK_PATH"
+          "$ANDROID_HOME/build-tools/35.0.1/aapt" dump badging "$APK_PATH" | head -20
+          ls -lh "$APK_PATH"
 
       - name: Publicar APK para instalação
         uses: actions/upload-artifact@v4
