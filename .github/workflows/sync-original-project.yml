@@ -1,0 +1,54 @@
+name: Sync original Godot project
+
+on:
+  push:
+    paths:
+      - 'RuinasPerdidas_Projeto_Godot.zip'
+      - '.github/workflows/sync-original-project.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify and extract original ZIP
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import zipfile
+          from pathlib import PurePosixPath
+          archive = "RuinasPerdidas_Projeto_Godot.zip"
+          with zipfile.ZipFile(archive) as z:
+              bad = z.testzip()
+              if bad:
+                  raise SystemExit(f"Arquivo corrompido: {bad}")
+              for item in z.infolist():
+                  path = PurePosixPath(item.filename)
+                  if path.is_absolute() or ".." in path.parts:
+                      raise SystemExit(f"Caminho inseguro no ZIP: {item.filename}")
+              z.extractall(".")
+          PY
+          test -f RuinasPerdidas/project.godot
+          echo "Arquivos de origem extraídos:"
+          find RuinasPerdidas -type f | sort
+          if [ ! -d RuinasPerdidas/assets ]; then
+            echo "::warning::O ZIP original não contém a pasta assets/ exigida pelos caminhos 3D do projeto."
+          fi
+      - name: Commit exact extracted source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A RuinasPerdidas
+          if git diff --cached --quiet; then
+            echo "A cópia já está atualizada."
+          else
+            git commit -m "Import original Ruinas Perdidas Godot project"
+            git push
+          fi
