@@ -12,6 +12,10 @@ on:
       - 'RuinasPerdidas/tools/**'
       - 'RuinasPerdidas/assets/**'
 
+concurrency:
+  group: ruinas-perdidas-android-build
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
