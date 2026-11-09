@@ -124,6 +124,7 @@ func veg_factor() -> float:
 
 func save_settings() -> void:
     var cfg := ConfigFile.new()
+    cfg.set_value("video", "settings_version", 2)
     cfg.set_value("video", "quality", quality)
     cfg.set_value("video", "fps_cap", fps_cap)
     cfg.set_value("audio", "sfx", sfx_volume)
@@ -136,7 +137,8 @@ func load_settings() -> void:
     var cfg := ConfigFile.new()
     if cfg.load(SETTINGS_PATH) != OK:
         return
-    quality = clampi(int(cfg.get_value("video", "quality", 2)), 0, QUALITY_NAMES.size() - 1)
+    var settings_version := int(cfg.get_value("video", "settings_version", 0))
+    quality = 2 if settings_version < 2 else clampi(int(cfg.get_value("video", "quality", 2)), 0, QUALITY_NAMES.size() - 1)
     fps_cap = int(cfg.get_value("video", "fps_cap", 60))
     sfx_volume = float(cfg.get_value("audio", "sfx", 0.8))
     music_volume = float(cfg.get_value("audio", "music", 0.5))
