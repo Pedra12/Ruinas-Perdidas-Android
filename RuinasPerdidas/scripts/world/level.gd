@@ -6,7 +6,7 @@ extends Node3D
 const WORLD := 100.0
 const CITY_MAP_PATH := "res://assets/maps/rua-bela-vista-29214-100-guarapari-sol-nascente.glb"
 const CITY_MAP_SCALE := 1000.0
-const START_POS := Vector3(0.0, 0.3, 70.0)
+const START_POS := Vector3(0.0, 0.3, 0.0)
 const BOSS_POS := Vector3(0.0, 0.0, -46.0)
 const CHEST_POS := Vector3(0.0, 0.0, -57.0)
 const GATE_POS := Vector3(0.0, 0.0, -25.0)
@@ -91,36 +91,17 @@ var _music_timer := 0.0
 
 
 func _ready() -> void:
-    _rng.seed = 20260611
+    # MODO EXPLORAÇÃO LIVRE: sem missões, gemas, inimigos, chefe ou baú.
     get_tree().paused = false
-    Game.reset_run()
+    Game.running = false
     Game.apply_quality()
-
-    _props_root = Node3D.new()
-    _props_root.name = "Props"
-    add_child(_props_root)
-
-    for g in GEM_SPOTS:
-        _keep_clear.append(g["pos"])
-    _keep_clear.append(START_POS)
-    _keep_clear.append(BOSS_POS)
-
     _build_environment()
     _build_city_map()
-    _build_ground()
-    _build_courtyard()
-    _build_ruins()
-    _build_vegetation()
+    _build_exploration_ground()
     _spawn_player()
     _build_hud()
-    _spawn_pickups()
-    _spawn_enemies()
-    _spawn_boss_and_chest()
-
-    Game.victory.connect(_on_end.bind(true))
-    Game.game_over.connect(_on_end.bind(false))
-    AudioManager.play_music("music_game")
-    hud.show_message("Encontre 3 gemas para abrir o portão do templo")
+    hud.show_message("Exploração livre • caminhe por todo o mapa")
+    AudioManager.stop_music()
 
 
 func _process(delta: float) -> void:
@@ -206,6 +187,21 @@ func _build_city_map() -> void:
         if geometry != null:
             geometry.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     print("Mapa original carregado: %s | escala %.0f | sombras próprias desligadas" % [CITY_MAP_PATH, CITY_MAP_SCALE])
+
+
+## Piso de colisão amplo e invisível. Sem muros: o jogador pode percorrer o cenário inteiro.
+func _build_exploration_ground() -> void:
+    var floor_body := StaticBody3D.new()
+    floor_body.name = "PisoInvisivel_Exploracao"
+    floor_body.collision_layer = 1
+    floor_body.collision_mask = 0
+    var shape := BoxShape3D.new()
+    shape.size = Vector3(100000.0, 2.0, 100000.0)
+    var collision := CollisionShape3D.new()
+    collision.shape = shape
+    collision.position.y = -1.0
+    floor_body.add_child(collision)
+    add_child(floor_body)
 
 
 func _build_ground() -> void:
