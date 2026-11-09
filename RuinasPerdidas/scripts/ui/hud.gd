@@ -34,11 +34,8 @@ func _ready() -> void:
     # Canto superior esquerdo: vida e stamina
     var left := VBoxContainer.new()
     left.add_theme_constant_override("separation", 8)
-    _hp = UiStyle.bar(Color(0.85, 0.2, 0.2), Vector2(380, 30))
-    _st = UiStyle.bar(Color(0.95, 0.8, 0.2), Vector2(300, 18))
-    left.add_child(UiStyle.label("VIDA", 20))
-    left.add_child(_hp)
-    left.add_child(_st)
+    left.add_child(UiStyle.label("RUINAS PERDIDAS", 26, Color(0.85, 0.95, 1.0)))
+    left.add_child(UiStyle.label("EXPLORACAO LIVRE", 18, Color(0.65, 1.0, 0.75)))
     root.add_child(left)
     left.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT, Control.PRESET_MODE_MINSIZE, m + int(insets.x))
 
@@ -46,7 +43,7 @@ func _ready() -> void:
     var center := VBoxContainer.new()
     center.alignment = BoxContainer.ALIGNMENT_BEGIN
     center.add_theme_constant_override("separation", 6)
-    _gems = UiStyle.label("GEMAS 0/%d" % Game.GEMS_REQUIRED, 32, Color(0.6, 1.0, 0.8))
+    _gems = UiStyle.label("MAPA ABERTO", 32, Color(0.6, 1.0, 0.8))
     _gems.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     center.add_child(_gems)
     _boss_box = VBoxContainer.new()
@@ -64,7 +61,7 @@ func _ready() -> void:
     # Canto superior direito: moedas e pausa
     var right := HBoxContainer.new()
     right.add_theme_constant_override("separation", 20)
-    _coins = UiStyle.label("MOEDAS 0", 30, Color(1.0, 0.85, 0.3))
+    _coins = UiStyle.label("" ", 30, Color(1.0, 0.85, 0.3))
     right.add_child(_coins)
     _pause_btn = UiStyle.button("II", Vector2(76, 76), 34)
     _pause_btn.pressed.connect(func() -> void: pause_requested.emit())
