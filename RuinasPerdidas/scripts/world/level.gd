@@ -221,10 +221,11 @@ func _build_ground() -> void:
     body.add_child(cs)
     add_child(body)
 
-    body.add_child(_flat_quad(Vector2(WORLD * 2.0, WORLD * 2.0), Vector3.ZERO, Color(0.3, 0.48, 0.22)))
-    # Trilha de terra do início até o portão e dentro do pátio
-    body.add_child(_flat_quad(Vector2(6.0, 96.0), Vector3(0.0, 0.06, 22.0), Color(0.45, 0.36, 0.24)))
-    body.add_child(_flat_quad(Vector2(46.0, 40.0), Vector3(0.0, 0.05, -45.0), Color(0.5, 0.46, 0.38)))
+    # Só usa o piso colorido de fallback quando o GLB original não está presente.
+    if not ResourceLoader.exists(CITY_MAP_PATH):
+        body.add_child(_flat_quad(Vector2(WORLD * 2.0, WORLD * 2.0), Vector3.ZERO, Color(0.3, 0.48, 0.22)))
+        body.add_child(_flat_quad(Vector2(6.0, 96.0), Vector3(0.0, 0.06, 22.0), Color(0.45, 0.36, 0.24)))
+        body.add_child(_flat_quad(Vector2(46.0, 40.0), Vector3(0.0, 0.05, -45.0), Color(0.5, 0.46, 0.38)))
 
     # Limites invisíveis do mapa
     var limits: Array[Array] = [
