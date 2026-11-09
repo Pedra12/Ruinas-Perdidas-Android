@@ -9,13 +9,13 @@ LOG="$(mktemp)"
 trap 'rm -f "$LOG"' EXIT
 
 echo "== 1/3 Importando recursos do projeto"
-"$GODOT" --headless --editor --path . --import --quit 2>&1 | tee "$LOG"
+timeout 180 "$GODOT" --headless --path . --import 2>&1 | tee "$LOG"
 
 echo "== 2/3 Validando a cena do menu"
-"$GODOT" --headless --path . --quit-after 60 res://scenes/main_menu.tscn 2>&1 | tee -a "$LOG"
+timeout 120 "$GODOT" --headless --path . --quit-after 60 res://scenes/main_menu.tscn 2>&1 | tee -a "$LOG"
 
 echo "== 3/3 Teste de fumaça do nível principal"
-"$GODOT" --headless --path . --quit-after 180 res://scenes/main.tscn 2>&1 | tee -a "$LOG"
+timeout 120 "$GODOT" --headless --path . --quit-after 180 res://scenes/main.tscn 2>&1 | tee -a "$LOG"
 
 python3 - "$LOG" <<'PY'
 import sys
