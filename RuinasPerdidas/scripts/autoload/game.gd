@@ -99,10 +99,8 @@ func apply_quality() -> void:
         return
     var s: float = RENDER_SCALES[quality]
     vp.scaling_3d_scale = s
-    if s < 1.0:
-        vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR
-    else:
-        vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
+    # O renderer Mobile não oferece FSR1; usar bilinear evita erro no Android.
+    vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
     if quality == 0:
         vp.msaa_3d = Viewport.MSAA_DISABLED
         vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA
