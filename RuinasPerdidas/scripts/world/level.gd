@@ -4,6 +4,8 @@ extends Node3D
 ## Orçamento mobile: ~150 draw calls, MultiMesh em cenários repetidos, 1 luz com sombra.
 
 const WORLD := 100.0
+const CITY_MAP_PATH := "res://assets/maps/rua-bela-vista-29214-100-guarapari-sol-nascente.glb"
+const CITY_MAP_SCALE := 1000.0
 const START_POS := Vector3(0.0, 0.3, 70.0)
 const BOSS_POS := Vector3(0.0, 0.0, -46.0)
 const CHEST_POS := Vector3(0.0, 0.0, -57.0)
@@ -104,6 +106,7 @@ func _ready() -> void:
     _keep_clear.append(BOSS_POS)
 
     _build_environment()
+    _build_city_map()
     _build_ground()
     _build_courtyard()
     _build_ruins()
@@ -177,6 +180,32 @@ func _build_environment() -> void:
     sun.shadow_bias = 0.06
     sun.shadow_normal_bias = 1.0
     add_child(sun)
+
+
+## Carrega o GLB geográfico original como cenário visual. O arquivo não é alterado.
+## A escala 1000 converte a unidade geográfica exportada para metros aproximados.
+## O mapa não lança sombras para reduzir custo no Android; o sol do jogo mantém sombras.
+func _build_city_map() -> void:
+    if not ResourceLoader.exists(CITY_MAP_PATH):
+        push_warning("Mapa original ainda não instalado em: %s" % CITY_MAP_PATH)
+        return
+    var packed: PackedScene = load(CITY_MAP_PATH)
+    if packed == null:
+        push_error("Não foi possível importar o GLB original: %s" % CITY_MAP_PATH)
+        return
+    var city := packed.instantiate() as Node3D
+    if city == null:
+        push_error("O GLB do mapa não gerou uma cena Node3D.")
+        return
+    city.name = "MapaOriginal_RuaBelaVista_Guarapari"
+    city.scale = Vector3.ONE * CITY_MAP_SCALE
+    city.position.y = -3.0
+    add_child(city)
+    for node in city.find_children("*", "GeometryInstance3D", true, false):
+        var geometry := node as GeometryInstance3D
+        if geometry != null:
+            geometry.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    print("Mapa original carregado: %s | escala %.0f | sombras próprias desligadas" % [CITY_MAP_PATH, CITY_MAP_SCALE])
 
 
 func _build_ground() -> void:
