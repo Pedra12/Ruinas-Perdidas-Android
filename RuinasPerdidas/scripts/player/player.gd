@@ -114,6 +114,7 @@ func _ready() -> void:
     _apply_character_palette()
     _setup_character_animations()
     Utils.force_loops(_anim, ["Idle", "Walk", "Jog_Fwd", "Sprint", "Jump"])
+    _validate_player_setup()
     _play("Idle")
     Game.set_health(health, MAX_HEALTH)
     Game.set_stamina(stamina, MAX_STAMINA)
@@ -122,6 +123,25 @@ func _ready() -> void:
         touch.roll_pressed.connect(request_roll)
         touch.jump_pressed.connect(request_jump)
 
+
+
+
+func _validate_player_setup() -> void:
+    var mesh_nodes := _model.find_children("*", "MeshInstance3D", true, false)
+    var skeleton := _model.find_child("Skeleton3D", true, false) as Skeleton3D
+    if mesh_nodes.is_empty() or skeleton == null:
+        push_error("Modelo do jogador sem malha ou esqueleto válido.")
+        return
+    var required := ["Idle", "Walk", "Jog_Fwd", "Sprint", "Sword_Attack", "Roll", "Jump_Start", "Jump", "Jump_Land", "Hit_Chest", "Death01"]
+    for animation_name in required:
+        if not _anim.has_animation(animation_name):
+            push_error("Animação obrigatória ausente no jogador: " + animation_name)
+    var first_mesh := mesh_nodes[0] as MeshInstance3D
+    if first_mesh.mesh != null and first_mesh.mesh.get_surface_count() > 0:
+        var skin_material := first_mesh.get_surface_override_material(0) as StandardMaterial3D
+        if skin_material == null or skin_material.albedo_texture == null:
+            push_error("Textura de paleta do personagem não foi aplicada.")
+    print("PLAYER READY | meshes=", mesh_nodes.size(), " bones=", skeleton.get_bone_count(), " animations=", _anim.get_animation_list())
 
 
 func _apply_character_palette() -> void:
