@@ -48,11 +48,11 @@ jobs:
                   out = pathlib.Path(td) / 'out'
                   out.mkdir()
                   src.write_bytes(data)
-                  check = subprocess.run(['7zz','t',str(src)],capture_output=True,text=True)
+                  check = subprocess.run(['7z','t',str(src)],capture_output=True,text=True)
                   if check.returncode != 0:
                       report.append({'archive': label, 'integrity': 'ERROR', 'detail': check.stdout[-1500:] + check.stderr[-1500:]})
                       return
-                  extract = subprocess.run(['7zz','x','-y',f'-o{out}',str(src)],capture_output=True,text=True)
+                  extract = subprocess.run(['7z','x','-y',f'-o{out}',str(src)],capture_output=True,text=True)
                   files = []
                   for p in sorted(out.rglob('*')):
                       if p.is_file():
