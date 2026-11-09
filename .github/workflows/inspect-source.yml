@@ -2,9 +2,6 @@ name: Auditar projeto original Ruinas Perdidas
 
 on:
   push:
-    paths:
-      - "RuinasPerdidas_Projeto_Godot.zip"
-      - ".github/workflows/inspect-source.yml"
   workflow_dispatch:
 
 permissions:
@@ -52,7 +49,7 @@ jobs:
           }
           pathlib.Path("auditoria/inventario.json").write_text(json.dumps(report, ensure_ascii=False, indent=2))
           pathlib.Path("auditoria/inventario.txt").write_text(
-              "\\n".join(f"{p.stat().st_size:>10}  {p.relative_to(out)}" for p in files) + "\\n"
+              "\n".join(f"{p.stat().st_size:>10}  {p.relative_to(out)}" for p in files) + "\n"
           )
           print(json.dumps({k:v for k,v in report.items() if k != "files"}, ensure_ascii=False, indent=2))
           if not projects:
