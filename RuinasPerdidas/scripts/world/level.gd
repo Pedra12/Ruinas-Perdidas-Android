@@ -5,7 +5,8 @@ extends Node3D
 
 const WORLD := 100.0
 const CITY_MAP_PATH := "res://assets/maps/rua-bela-vista-29214-100-guarapari-sol-nascente.glb"
-const CITY_MAP_SCALE := 1000.0
+const CITY_MAP_WIDTH_METERS := 6296.701339
+const CITY_MAP_DEPTH_METERS := 6295.707559
 const START_POS := Vector3(0.0, 0.3, 0.0)
 const BOSS_POS := Vector3(0.0, 0.0, -46.0)
 const CHEST_POS := Vector3(0.0, 0.0, -57.0)
@@ -179,14 +180,29 @@ func _build_city_map() -> void:
         push_error("O GLB do mapa não gerou uma cena Node3D.")
         return
     city.name = "MapaOriginal_RuaBelaVista_Guarapari"
-    city.scale = Vector3.ONE * CITY_MAP_SCALE
-    city.position.y = -3.0
     add_child(city)
+
+    # O pacote Mini Skyline informa que a seleção geográfica mede
+    # 6296.701339 x 6295.707559 metros. O GLB é exportado como miniatura
+    # de impressão (aprox. 160 mm de largura), portanto não pode usar escala 1000.
+    # Medimos a geometria importada e calculamos a escala uniforme em runtime.
+    var source_bounds: AABB = Utils.aabb_in(city, city)
+    if source_bounds.size.x <= 0.001 or source_bounds.size.z <= 0.001:
+        push_error("Não foi possível medir os limites do GLB original.")
+        city.queue_free()
+        return
+    var scale_x: float = CITY_MAP_WIDTH_METERS / source_bounds.size.x
+    var scale_z: float = CITY_MAP_DEPTH_METERS / source_bounds.size.z
+    var calibrated_scale: float = (scale_x + scale_z) * 0.5
+    city.scale = Vector3.ONE * calibrated_scale
+    city.position.y = -source_bounds.position.y * calibrated_scale
+    print("CALIBRACAO MAPA | AABB GLB: %.6f x %.6f x %.6f | escala: %.2f | dimensao final: %.1f x %.1f m" % [source_bounds.size.x, source_bounds.size.y, source_bounds.size.z, calibrated_scale, source_bounds.size.x * calibrated_scale, source_bounds.size.z * calibrated_scale])
+
     for node in city.find_children("*", "GeometryInstance3D", true, false):
         var geometry := node as GeometryInstance3D
         if geometry != null:
             geometry.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-    print("Mapa original carregado: %s | escala %.0f | sombras próprias desligadas" % [CITY_MAP_PATH, CITY_MAP_SCALE])
+    print("Mapa original carregado: %s | escala geográfica calibrada | sombras próprias desligadas" % CITY_MAP_PATH)
 
 
 ## Piso de colisão amplo e invisível. Sem muros: o jogador pode percorrer o cenário inteiro.
