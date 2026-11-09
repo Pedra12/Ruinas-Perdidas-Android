@@ -211,32 +211,31 @@ func _copy_ual_combat_animations() -> void:
 
 
 func _retarget_ual_clip(clip: Animation) -> void:
-    for track in clip.get_track_count():
+    for track in range(clip.get_track_count() - 1, -1, -1):
         var source_path: NodePath = clip.track_get_path(track)
         if source_path.get_subname_count() == 0:
-            clip.track_set_enabled(track, false)
+            clip.remove_track(track)
             continue
         var source_bone := String(source_path.get_subname(0))
         if not UAL_TO_HUMAN.has(source_bone):
-            clip.track_set_enabled(track, false)
+            clip.remove_track(track)
             continue
         var target_bone: String = String(UAL_TO_HUMAN[source_bone])
         clip.track_set_path(track, NodePath("Skeleton3D:" + target_bone))
-
 
 
 func _filter_clip_for_player_skeleton(clip: Animation) -> void:
     var skeleton := _model.find_child("Skeleton3D", true, false) as Skeleton3D
     if skeleton == null:
         return
-    for track in clip.get_track_count():
+    for track in range(clip.get_track_count() - 1, -1, -1):
         var path: NodePath = clip.track_get_path(track)
         if path.get_subname_count() == 0:
-            clip.track_set_enabled(track, false)
+            clip.remove_track(track)
             continue
         var bone_name := String(path.get_subname(0))
         if skeleton.find_bone(bone_name) < 0:
-            clip.track_set_enabled(track, false)
+            clip.remove_track(track)
 
 
 func _store_animation(animation_name: String, clip: Animation) -> void:
