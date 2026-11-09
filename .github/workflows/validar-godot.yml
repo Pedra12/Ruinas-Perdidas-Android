@@ -32,6 +32,9 @@ jobs:
           mkdir -p RuinasPerdidas/assets/maps
           unzip -oq /tmp/mapa-cidade.zip -d /tmp/mapa-cidade
           install -m 644 /tmp/mapa-cidade/rua-bela-vista-29214-100-guarapari-sol-nascente.glb RuinasPerdidas/assets/maps/rua-bela-vista-29214-100-guarapari-sol-nascente.glb
+          install -m 644 /tmp/mapa-cidade/miniskylines_attribution.txt RuinasPerdidas/assets/maps/miniskylines_attribution.txt
+          install -m 644 /tmp/mapa-cidade/miniskylines_sources.json RuinasPerdidas/assets/maps/miniskylines_sources.json
+          install -m 644 /tmp/mapa-cidade/README.txt RuinasPerdidas/assets/maps/README.txt
           test -s RuinasPerdidas/assets/maps/rua-bela-vista-29214-100-guarapari-sol-nascente.glb
       - name: Extrair assets originais sem substituir o projeto
         working-directory: RuinasPerdidas
