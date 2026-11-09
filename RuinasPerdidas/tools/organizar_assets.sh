@@ -7,7 +7,7 @@ PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 SRC="$(cd "${1:-$PROJECT_DIR/..}" && pwd)"
 OUT="$PROJECT_DIR/assets"
 TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
+trap 'chmod -R u+rwX "$TMP" "$OUT" 2>/dev/null || true; rm -rf "$TMP"' EXIT
 
 need_file() {
   if [[ ! -f "$1" ]]; then
