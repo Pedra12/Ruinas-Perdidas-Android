@@ -31,6 +31,9 @@ jobs:
 
       - name: Configurar Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: |
+            platform-tools
 
       - name: Instalar componentes Android exigidos pelo Godot 4.4
         run: |
