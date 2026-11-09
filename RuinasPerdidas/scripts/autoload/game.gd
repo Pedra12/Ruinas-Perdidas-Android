@@ -24,7 +24,7 @@ var elapsed := 0.0
 var running := false
 var best_time := 0.0
 
-var quality := 1
+var quality := 2
 var fps_cap := 60
 var sfx_volume := 0.8
 var music_volume := 0.5
@@ -136,7 +136,7 @@ func load_settings() -> void:
     var cfg := ConfigFile.new()
     if cfg.load(SETTINGS_PATH) != OK:
         return
-    quality = clampi(int(cfg.get_value("video", "quality", 1)), 0, QUALITY_NAMES.size() - 1)
+    quality = clampi(int(cfg.get_value("video", "quality", 2)), 0, QUALITY_NAMES.size() - 1)
     fps_cap = int(cfg.get_value("video", "fps_cap", 60))
     sfx_volume = float(cfg.get_value("audio", "sfx", 0.8))
     music_volume = float(cfg.get_value("audio", "music", 0.5))
