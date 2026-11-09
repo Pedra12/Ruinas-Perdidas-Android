@@ -5,7 +5,13 @@ extends RefCounted
 
 const ROOT := "res://assets/"
 
-const PLAYER := ROOT + "characters/UAL1_Standard.glb"
+const PLAYER := ROOT + "human_motion/Models/HumanM_Model.fbx"
+const PLAYER_PALETTE := ROOT + "human_motion/Textures/HumanAnimations_ColorPalette.png"
+const PLAYER_ANIMATION_SOURCE := ROOT + "characters/UAL1_Standard.glb"
+const PLAYER_IDLE_ANIM := ROOT + "human_motion/Animations/Male/Idles/HumanM@Idle01.fbx"
+const PLAYER_WALK_ANIM := ROOT + "human_motion/Animations/Male/Movement/Walk/HumanM@Walk01_Forward.fbx"
+const PLAYER_RUN_ANIM := ROOT + "human_motion/Animations/Male/Movement/Run/HumanM@Run01_Forward.fbx"
+const PLAYER_SPRINT_ANIM := ROOT + "human_motion/Animations/Male/Movement/Sprint/HumanM@Sprint01_Forward.fbx"
 
 const SKELY := ROOT + "enemies/Skely.glb"
 const SKELY_DRAUGR := ROOT + "enemies/SkelyDraugr.glb"
