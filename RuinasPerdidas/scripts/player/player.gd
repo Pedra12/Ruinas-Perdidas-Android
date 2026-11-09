@@ -195,7 +195,7 @@ func _state_move(delta: float) -> void:
             AudioManager.play_sfx("footstep", 0.12, -6.0)
             _step_timer = 0.28 if sprint else 0.38
     else:
-        _play("Idle_Loop")
+        _play("Idle")
 
 
 func _anim_len(anim_name: String, fallback: float) -> float:
