@@ -28,12 +28,32 @@ var quality := 2
 var fps_cap := 60
 var sfx_volume := 0.8
 var music_volume := 0.5
+var _adaptive_scale := 1.0
+var _adaptive_timer := 1.0
 
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
     load_settings()
     apply_quality()
+
+
+func _process(delta: float) -> void:
+    _adaptive_timer -= delta
+    if _adaptive_timer > 0.0:
+        return
+    _adaptive_timer = 1.25
+    var fps: float = float(Engine.get_frames_per_second())
+    if fps <= 0.0:
+        return
+    var next_scale: float = _adaptive_scale
+    if fps < 46.0:
+        next_scale = maxf(0.65, _adaptive_scale - 0.08)
+    elif fps > 57.0:
+        next_scale = minf(RENDER_SCALES[quality], _adaptive_scale + 0.025)
+    if not is_equal_approx(next_scale, _adaptive_scale):
+        _adaptive_scale = next_scale
+        get_viewport().scaling_3d_scale = _adaptive_scale
 
 
 func reset_run() -> void:
@@ -97,7 +117,8 @@ func apply_quality() -> void:
     var vp: Viewport = get_viewport()
     if vp == null:
         return
-    var s: float = RENDER_SCALES[quality]
+    _adaptive_scale = RENDER_SCALES[quality]
+    var s: float = _adaptive_scale
     vp.scaling_3d_scale = s
     vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
     if quality == 0:
