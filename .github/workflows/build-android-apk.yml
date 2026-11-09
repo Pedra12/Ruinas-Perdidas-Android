@@ -1,0 +1,92 @@
+name: Compilar APK Android
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/build-android-apk.yml'
+      - 'RuinasPerdidas/project.godot'
+      - 'RuinasPerdidas/export_presets.cfg'
+      - 'RuinasPerdidas/scenes/**'
+      - 'RuinasPerdidas/scripts/**'
+      - 'RuinasPerdidas/tools/**'
+      - 'RuinasPerdidas/assets/**'
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar componentes Android exigidos pelo Godot 4.4
+        run: |
+          yes | sdkmanager --sdk_root="$ANDROID_HOME" --licenses >/dev/null || true
+          sdkmanager --sdk_root="$ANDROID_HOME" \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.1" \
+            "ndk;28.1.13356709" \
+            "cmake;3.10.2.4988404"
+
+      - name: Instalar ferramentas e extrair assets originais
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y 7zip python3-pil unzip
+          curl -fL --retry 3 "https://github.com/Pedra12/Ruinas-Perdidas-Android/releases/download/V1.0.0/Stylized.Nature.MegaKit.Standard.zip" -o Stylized.Nature.MegaKit.Standard.zip
+          chmod +x RuinasPerdidas/tools/organizar_assets.sh
+          (cd RuinasPerdidas && bash tools/organizar_assets.sh ..)
+
+      - name: Baixar Godot 4.4.1 e templates oficiais
+        run: |
+          curl -fL --retry 3 "https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip" -o /tmp/godot.zip
+          curl -fL --retry 3 "https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz" -o /tmp/godot-templates.tpz
+          mkdir -p /tmp/godot /tmp/godot-templates "$HOME/.local/share/godot/export_templates/4.4.1.stable" "$HOME/.config/godot"
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          unzip -q /tmp/godot-templates.tpz -d /tmp/godot-templates
+          chmod +x /tmp/godot/Godot_v4.4.1-stable_linux.x86_64
+          cp -a /tmp/godot-templates/templates/. "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
+          if [ -f /tmp/godot-templates/templates/version.txt ]; then
+            cp /tmp/godot-templates/templates/version.txt "$HOME/.local/share/godot/export_templates/4.4.1.stable/version.txt"
+          else
+            printf '4.4.1.stable' > "$HOME/.local/share/godot/export_templates/4.4.1.stable/version.txt"
+          fi
+          cat > "$HOME/.config/godot/editor_settings-4.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "$ANDROID_HOME"
+          export/android/java_sdk_path = "$JAVA_HOME"
+          EOF
+          /tmp/godot/Godot_v4.4.1-stable_linux.x86_64 --version
+
+      - name: Importar projeto e exportar APK arm64
+        run: |
+          GODOT=/tmp/godot/Godot_v4.4.1-stable_linux.x86_64
+          "$GODOT" --headless --path RuinasPerdidas --import
+          mkdir -p RuinasPerdidas/build
+          "$GODOT" --headless --path RuinasPerdidas --export-debug "Android" RuinasPerdidas/build/RuinasPerdidas.apk
+          test -s RuinasPerdidas/build/RuinasPerdidas.apk
+          "$ANDROID_HOME/build-tools/35.0.1/aapt" dump badging RuinasPerdidas/build/RuinasPerdidas.apk | head -20
+          ls -lh RuinasPerdidas/build/RuinasPerdidas.apk
+
+      - name: Publicar APK para instalação
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ruinas-Perdidas-Android-APK
+          path: RuinasPerdidas/build/RuinasPerdidas.apk
+          if-no-files-found: error
+          retention-days: 14
