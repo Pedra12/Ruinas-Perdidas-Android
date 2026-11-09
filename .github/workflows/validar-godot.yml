@@ -91,6 +91,7 @@ jobs:
             echo "Os assets já estão atualizados no repositório."
           else
             git commit -m "Add extracted original game assets"
+            git stash push -u -m "temporary files from asset validation"
             git fetch origin main
             git rebase origin/main
             git push origin HEAD:main
