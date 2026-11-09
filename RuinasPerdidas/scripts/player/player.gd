@@ -166,6 +166,7 @@ func _copy_human_animation(path: String, alias: String, loop: bool) -> void:
         var names := source_player.get_animation_list()
         if not names.is_empty():
             var clip: Animation = source_player.get_animation(String(names[0])).duplicate(true)
+            _filter_clip_for_player_skeleton(clip)
             if loop:
                 clip.loop_mode = Animation.LOOP_LINEAR
             _store_animation(alias, clip)
@@ -184,6 +185,7 @@ func _copy_ual_combat_animations() -> void:
                 continue
             var clip: Animation = source_player.get_animation(animation_name).duplicate(true)
             _retarget_ual_clip(clip)
+            _filter_clip_for_player_skeleton(clip)
             _store_animation(animation_name, clip)
     source_root.free()
 
@@ -200,6 +202,21 @@ func _retarget_ual_clip(clip: Animation) -> void:
             continue
         var target_bone: String = String(UAL_TO_HUMAN[source_bone])
         clip.track_set_path(track, NodePath("Skeleton3D:" + target_bone))
+
+
+
+func _filter_clip_for_player_skeleton(clip: Animation) -> void:
+    var skeleton := _model.find_child("Skeleton3D", true, false) as Skeleton3D
+    if skeleton == null:
+        return
+    for track in clip.get_track_count():
+        var path: NodePath = clip.track_get_path(track)
+        if path.get_subname_count() == 0:
+            clip.track_set_enabled(track, false)
+            continue
+        var bone_name := String(path.get_subname(0))
+        if skeleton.find_bone(bone_name) < 0:
+            clip.track_set_enabled(track, false)
 
 
 func _store_animation(animation_name: String, clip: Animation) -> void:
