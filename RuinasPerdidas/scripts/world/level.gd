@@ -350,7 +350,7 @@ func _build_vegetation() -> void:
                 cs.shape = trunk
                 cs.position = Vector3(p.x, 2.0, p.z)
                 tree_body.add_child(cs)
-        var cell: float = 50.0 if big else 30.0
+        var cell: float = 50.0
         _scatter(mesh, xforms, cell, float(v[5]), bool(v[4]))
 
 
