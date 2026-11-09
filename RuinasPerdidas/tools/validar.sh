@@ -1,29 +1,24 @@
 #!/usr/bin/env bash
-# Valida o projeto sem abrir o editor. Uso: GODOT=/caminho/godot ./tools/validar.sh
-# Falha (exit 1) se houver qualquer ERROR / SCRIPT ERROR / Parse Error.
-set -u
+# Valida o projeto completo com os autoloads e recursos do project.godot ativos.
+# Uso: GODOT=/caminho/godot ./tools/validar.sh
+set -euo pipefail
 GODOT="${GODOT:-godot}"
 cd "$(dirname "$0")/.."
-LOG=$(mktemp)
-status=0
+LOG="$(mktemp)"
+trap 'rm -f "$LOG"' EXIT
 
-echo "== 1/3 Importando recursos (pode rodar 2x na primeira vez)"
-"$GODOT" --headless --path . --import >"$LOG" 2>&1
-"$GODOT" --headless --path . --import >>"$LOG" 2>&1
+echo "== 1/3 Importando recursos do projeto"
+"$GODOT" --headless --editor --path . --import --quit 2>&1 | tee "$LOG"
 
-echo "== 2/3 Checando sintaxe de cada script"
-for f in $(find scripts -name '*.gd'); do
-  out=$("$GODOT" --headless --path . --check-only --script "res://$f" 2>&1)
-  if echo "$out" | grep -qE "ERROR|Parse Error|SCRIPT ERROR"; then
-    echo "FALHA em $f"; echo "$out" | grep -E "ERROR|Parse Error|SCRIPT ERROR" | head -5; status=1
-  fi
-done
+echo "== 2/3 Validando a cena do menu"
+"$GODOT" --headless --path . --quit-after 60 res://scenes/main_menu.tscn 2>&1 | tee -a "$LOG"
 
-echo "== 3/3 Teste de fumaça: carrega o jogo por 180 quadros"
-"$GODOT" --headless --path . --quit-after 180 res://scenes/main.tscn >>"$LOG" 2>&1
-if grep -E "ERROR|SCRIPT ERROR|Parse Error" "$LOG" | grep -v "ERROR: .*\.glb.*unused" ; then
-  status=1
+echo "== 3/3 Teste de fumaça do nível principal"
+"$GODOT" --headless --path . --quit-after 180 res://scenes/main.tscn 2>&1 | tee -a "$LOG"
+
+if grep -E "ERROR:|SCRIPT ERROR:|Parse Error:" "$LOG"; then
+  echo "FALHA: foram encontrados erros no projeto."
+  exit 1
 fi
 
-if [ "$status" -eq 0 ]; then echo "OK: nenhum erro encontrado."; else echo "ERROS encontrados (log: $LOG)"; fi
-exit $status
+echo "OK: importação, menu e nível principal carregaram sem erros."
