@@ -32,9 +32,7 @@ func _ready() -> void:
 func _layout() -> void:
     var s: Vector2 = size
     _buttons = [
-        {"id": "attack", "label": "ATQ", "center": Vector2(s.x - 190.0, s.y - 190.0), "radius": 92.0, "finger": -1},
-        {"id": "roll", "label": "ROLAR", "center": Vector2(s.x - 360.0, s.y - 120.0), "radius": 64.0, "finger": -1},
-        {"id": "jump", "label": "PULAR", "center": Vector2(s.x - 110.0, s.y - 380.0), "radius": 64.0, "finger": -1},
+        {"id": "jump", "label": "PULAR", "center": Vector2(s.x - 150.0, s.y - 190.0), "radius": 70.0, "finger": -1},
     ]
     queue_redraw()
 
