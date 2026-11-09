@@ -4,12 +4,16 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'RuinasPerdidas/**'
+      - 'RuinasPerdidas/project.godot'
+      - 'RuinasPerdidas/export_presets.cfg'
+      - 'RuinasPerdidas/scenes/**'
+      - 'RuinasPerdidas/scripts/**'
+      - 'RuinasPerdidas/tools/**'
       - '*.zip'
       - '.github/workflows/validar-godot.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate:
@@ -78,6 +82,17 @@ jobs:
           export GODOT=/tmp/godot/Godot_v4.4.1-stable_linux.x86_64
           bash RuinasPerdidas/tools/validar.sh
           "$GODOT" --headless --path RuinasPerdidas --quit-after 180 res://scenes/main.tscn
+      - name: Salvar assets extraídos no repositório
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RuinasPerdidas/assets/ RuinasPerdidas/docs/source/springfield/
+          if git diff --cached --quiet; then
+            echo "Os assets já estão atualizados no repositório."
+          else
+            git commit -m "Add extracted original game assets"
+            git push origin HEAD:main
+          fi
       - name: Publicar assets extraídos e logs para auditoria
         uses: actions/upload-artifact@v4
         with:
