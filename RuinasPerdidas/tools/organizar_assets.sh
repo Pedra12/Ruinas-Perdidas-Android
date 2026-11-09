@@ -46,9 +46,10 @@ cp -f "$UAL" "$OUT/characters/UAL1_Standard.glb"
 # Preservar o pacote humano completo como fonte e importar o modelo masculino
 # com animações básicas selecionadas para uso no jogo.
 unzip -oq "$SRC/Human Basic Motions FREE.zip" -d "$TMP/human"
-HUMAN_ROOT="$(find "$TMP/human" -type d -name 'Human Basic Motions FREE' -print -quit)"
-if [[ -z "$HUMAN_ROOT" ]]; then
-  echo "ERRO: pasta Human Basic Motions FREE não encontrada." >&2
+HUMAN_ROOT="$TMP/human"
+if [[ ! -f "$HUMAN_ROOT/Models/HumanM_Model.fbx" ]]; then
+  echo "ERRO: Models/HumanM_Model.fbx não encontrado na raiz do pacote Human Basic Motions FREE." >&2
+  find "$HUMAN_ROOT" -maxdepth 3 -type f | head -40 >&2
   exit 1
 fi
 cp -a "$HUMAN_ROOT/." "$PROJECT_DIR/docs/source/human_basic_motions/"
