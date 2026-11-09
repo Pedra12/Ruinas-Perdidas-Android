@@ -20,7 +20,7 @@ jobs:
       - name: Instalar ferramentas de extração e texturas
         run: |
           sudo apt-get update
-          sudo apt-get install -y 7zip python3-pil unzip xvfb mesa-vulkan-drivers
+          sudo apt-get install -y 7zip python3-pil unzip
       - name: Baixar pacote Nature do Release
         run: |
           curl -fL --retry 3 "https://github.com/Pedra12/Ruinas-Perdidas-Android/releases/download/V1.0.0/Stylized.Nature.MegaKit.Standard.zip" -o Stylized.Nature.MegaKit.Standard.zip
