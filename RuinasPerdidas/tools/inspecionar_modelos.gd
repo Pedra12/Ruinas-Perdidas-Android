@@ -7,7 +7,13 @@ const PATHS := [
     "res://assets/kaykit/Rig_Large_MovementAdvanced.glb",
     "res://assets/kaykit/Rig_Large_CombatMelee.glb",
     "res://assets/kaykit/Rig_Large_General.glb",
-    "res://assets/kaykit/Rig_Large_Special.glb"
+    "res://assets/kaykit/Rig_Large_Special.glb",
+    "res://assets/human_motion/Models/HumanM_Model.fbx",
+    "res://assets/human_motion/Animations/Male/Idles/HumanM@Idle01.fbx",
+    "res://assets/human_motion/Animations/Male/Movement/Walk/HumanM@Walk01_Forward.fbx",
+    "res://assets/human_motion/Animations/Male/Movement/Run/HumanM@Run01_Forward.fbx",
+    "res://assets/human_motion/Animations/Male/Movement/Sprint/HumanM@Sprint01_Forward.fbx",
+    "res://assets/human_motion/Animations/Male/Movement/Jump/HumanM@Jump01.fbx"
 ]
 
 func _initialize() -> void:
