@@ -186,7 +186,7 @@ func _state_move(delta: float) -> void:
     elif mag > 0.05:
         if sprint:
             _play("Sprint_Loop")
-        elif mag < 0.5:
+        elif mag < 0.90:
             _play("Walk_Loop")
         else:
             _play("Jog_Fwd_Loop")
