@@ -57,8 +57,8 @@ func _ready() -> void:
     add_child(_model)
     Utils.fit_height(self, _model, HEIGHT)
     _anim = Utils.find_anim_player(_model)
-    Utils.force_loops(_anim)
-    _play("Idle_Loop")
+    Utils.force_loops(_anim, ["Idle", "Walk", "Jog_Fwd", "Sprint", "Jump"])
+    _play("Idle")
     Game.set_health(health, MAX_HEALTH)
     Game.set_stamina(stamina, MAX_STAMINA)
     if touch != null:
@@ -182,20 +182,20 @@ func _state_move(delta: float) -> void:
         if velocity.y > 1.0 and _anim != null and _anim.current_animation == "Jump_Start":
             pass
         else:
-            _play("Jump_Loop")
+            _play("Jump")
     elif mag > 0.05:
         if sprint:
-            _play("Sprint_Loop")
+            _play("Sprint")
         elif mag < 0.5:
-            _play("Walk_Loop")
+            _play("Walk")
         else:
-            _play("Jog_Fwd_Loop")
+            _play("Jog_Fwd")
         _step_timer -= delta
         if _step_timer <= 0.0:
             AudioManager.play_sfx("footstep", 0.12, -6.0)
             _step_timer = 0.28 if sprint else 0.38
     else:
-        _play("Idle_Loop")
+        _play("Idle")
 
 
 func _anim_len(anim_name: String, fallback: float) -> float:
