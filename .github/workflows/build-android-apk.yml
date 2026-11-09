@@ -85,6 +85,7 @@ jobs:
             keytool -genkeypair -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
           "$GODOT" --headless --path "$GITHUB_WORKSPACE/RuinasPerdidas" --import
+          "$GODOT" --headless --path "$GITHUB_WORKSPACE/RuinasPerdidas" --script res://tools/inspecionar_modelos.gd | tee "$GITHUB_WORKSPACE/modelos-diagnostico.txt"
           "$GODOT" --headless --path "$GITHUB_WORKSPACE/RuinasPerdidas" --export-debug "Android" "$APK_PATH"
           test -s "$APK_PATH"
           "$ANDROID_HOME/build-tools/35.0.1/aapt" dump badging "$APK_PATH" | head -20
@@ -94,6 +95,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Ruinas-Perdidas-Android-APK
-          path: RuinasPerdidas/build/RuinasPerdidas.apk
+          path: |
+            RuinasPerdidas/build/RuinasPerdidas.apk
+            modelos-diagnostico.txt
           if-no-files-found: error
           retention-days: 14
