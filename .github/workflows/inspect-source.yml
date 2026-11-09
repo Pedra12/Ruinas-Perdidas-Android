@@ -1,0 +1,70 @@
+name: Auditar projeto original Ruinas Perdidas
+
+on:
+  push:
+    paths:
+      - "RuinasPerdidas_Projeto_Godot.zip"
+      - ".github/workflows/inspect-source.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
+      - name: Extrair e inventariar o ZIP original
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f RuinasPerdidas_Projeto_Godot.zip
+          mkdir -p auditoria projeto_extraido
+          python3 - <<'PY'
+          import zipfile, pathlib, json, hashlib
+          zpath = pathlib.Path("RuinasPerdidas_Projeto_Godot.zip")
+          out = pathlib.Path("projeto_extraido")
+          with zipfile.ZipFile(zpath) as z:
+              bad = z.testzip()
+              if bad:
+                  raise SystemExit(f"ZIP corrompido: {bad}")
+              entries = z.infolist()
+              for item in entries:
+                  p = pathlib.PurePosixPath(item.filename)
+                  if p.is_absolute() or ".." in p.parts:
+                      raise SystemExit(f"Caminho inseguro no ZIP: {item.filename}")
+              z.extractall(out)
+          files = sorted(p for p in out.rglob("*") if p.is_file())
+          dirs = sorted(p for p in out.rglob("*") if p.is_dir())
+          projects = sorted(str(p.relative_to(out)) for p in out.rglob("project.godot"))
+          report = {
+              "archive": zpath.name,
+              "archive_bytes": zpath.stat().st_size,
+              "archive_sha256": hashlib.sha256(zpath.read_bytes()).hexdigest(),
+              "zip_entries": len(entries),
+              "extracted_files": len(files),
+              "directories": len(dirs),
+              "project_godot_files": projects,
+              "files": [{"path": str(p.relative_to(out)), "bytes": p.stat().st_size} for p in files]
+          }
+          pathlib.Path("auditoria/inventario.json").write_text(json.dumps(report, ensure_ascii=False, indent=2))
+          pathlib.Path("auditoria/inventario.txt").write_text(
+              "\\n".join(f"{p.stat().st_size:>10}  {p.relative_to(out)}" for p in files) + "\\n"
+          )
+          print(json.dumps({k:v for k,v in report.items() if k != "files"}, ensure_ascii=False, indent=2))
+          if not projects:
+              raise SystemExit("Nenhum project.godot foi encontrado no ZIP.")
+          PY
+
+      - name: Publicar projeto extraído e inventário para a próxima etapa
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruinas-perdidas-fonte-original-extraida
+          path: |
+            projeto_extraido/
+            auditoria/
+          if-no-files-found: error
+          retention-days: 14
