@@ -61,7 +61,7 @@ func _ready() -> void:
     # Canto superior direito: moedas e pausa
     var right := HBoxContainer.new()
     right.add_theme_constant_override("separation", 20)
-    _coins = UiStyle.label("" ", 30, Color(1.0, 0.85, 0.3))
+    _coins = UiStyle.label(" ", 30, Color(1.0, 0.85, 0.3))
     right.add_child(_coins)
     _pause_btn = UiStyle.button("II", Vector2(76, 76), 34)
     _pause_btn.pressed.connect(func() -> void: pause_requested.emit())
@@ -78,13 +78,7 @@ func _ready() -> void:
     _msg.grow_horizontal = Control.GROW_DIRECTION_BOTH
     _msg.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM, Control.PRESET_MODE_MINSIZE, 330)
 
-    Game.health_changed.connect(_on_health)
-    Game.stamina_changed.connect(_on_stamina)
-    Game.gems_changed.connect(_on_gems)
-    Game.coins_changed.connect(_on_coins)
     Game.message.connect(show_message)
-    _on_gems(Game.gems)
-    _on_coins(Game.coins)
 
 
 func _process(_delta: float) -> void:
