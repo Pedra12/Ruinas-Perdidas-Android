@@ -9,7 +9,7 @@ signal hp_changed(current: float, maximum: float)
 enum S { IDLE, CHASE, ATTACK, HURT, DEAD }
 
 const GRAVITY := 22.0
-const SLEEP_DISTANCE := 75.0
+const SLEEP_DISTANCE := 48.0
 const MODEL_YAW_OFFSET := 0.0  # ajuste (ex.: PI) se o modelo olhar para trás
 
 @export var model_path: String = AssetPaths.SKELY
@@ -33,6 +33,7 @@ var _cooldown := 0.0
 var _hit_done := false
 var _attack_len := 1.0
 var _check := 0.0
+var _far_paused := false
 
 
 func _ready() -> void:
@@ -53,6 +54,11 @@ func _ready() -> void:
     Utils.fit_height(self, _model, height)
     _anim = Utils.find_anim_player(_model)
     Utils.force_loops(_anim, ["Idle", "Run"])
+    for mesh_node in _model.find_children("*", "MeshInstance3D", true, false):
+        var mesh_instance := mesh_node as MeshInstance3D
+        mesh_instance.visibility_range_end = SLEEP_DISTANCE + 8.0
+        mesh_instance.visibility_range_end_margin = 6.0
+        mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     _play("Idle")
     hp_changed.emit(hp, max_hp)
 
@@ -74,7 +80,15 @@ func _physics_process(delta: float) -> void:
 
     if dist > SLEEP_DISTANCE:
         velocity = Vector3.ZERO
+        state = S.IDLE
+        if _anim != null and _anim.is_playing():
+            _anim.pause()
+        _far_paused = true
+        move_and_slide()
         return
+    if _far_paused:
+        _far_paused = false
+        _play("Idle", 1.0, 0.05, true)
 
     if not is_on_floor():
         velocity.y -= GRAVITY * delta
