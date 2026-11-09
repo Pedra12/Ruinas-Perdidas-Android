@@ -1,0 +1,80 @@
+name: Inspecionar arquivos RAR internos
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/inspect-rar-assets.yml'
+      - 'mapa-springfield.zip'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-rar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+      - name: Instalar leitor de RAR/7z
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y 7zip
+      - name: Examinar RARs encontrados nos ZIPs e pastas
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import zipfile, pathlib, tempfile, subprocess, json, os, hashlib, io
+          roots = list(pathlib.Path('.').rglob('*.zip'))
+          report = []
+          seen = set()
+          def scan_zip(label, data, depth=0):
+              if depth > 8: return
+              try:
+                  with zipfile.ZipFile(io.BytesIO(data)) as z:
+                      bad = z.testzip()
+                      report.append({'archive': label, 'integrity': 'OK' if bad is None else f'CORRUPT:{bad}', 'entries': len(z.infolist())})
+                      for info in z.infolist():
+                          if info.filename.lower().endswith('.rar') and not info.is_dir():
+                              scan_rar(label + '!' + info.filename, z.read(info), depth + 1)
+                          elif info.filename.lower().endswith('.zip') and not info.is_dir():
+                              scan_zip(label + '!' + info.filename, z.read(info), depth + 1)
+              except Exception as e:
+                  report.append({'archive': label, 'error': str(e)})
+          def scan_rar(label, data, depth=0):
+              if depth > 8: return
+              with tempfile.TemporaryDirectory() as td:
+                  src = pathlib.Path(td) / 'inner.rar'
+                  out = pathlib.Path(td) / 'out'
+                  out.mkdir()
+                  src.write_bytes(data)
+                  check = subprocess.run(['7zz','t',str(src)],capture_output=True,text=True)
+                  if check.returncode != 0:
+                      report.append({'archive': label, 'integrity': 'ERROR', 'detail': check.stdout[-1500:] + check.stderr[-1500:]})
+                      return
+                  extract = subprocess.run(['7zz','x','-y',f'-o{out}',str(src)],capture_output=True,text=True)
+                  files = []
+                  for p in sorted(out.rglob('*')):
+                      if p.is_file():
+                          rel = str(p.relative_to(out))
+                          files.append({'path':rel,'bytes':p.stat().st_size})
+                          if p.suffix.lower()=='.zip':
+                              scan_zip(label+'!'+rel,p.read_bytes(),depth+1)
+                          elif p.suffix.lower()=='.rar':
+                              scan_rar(label+'!'+rel,p.read_bytes(),depth+1)
+                  report.append({'archive':label,'integrity':'OK' if extract.returncode==0 else 'EXTRACT_ERROR','files':files,'count':len(files)})
+          for p in roots:
+              if str(p) not in seen:
+                  seen.add(str(p))
+                  scan_zip(str(p),p.read_bytes())
+          pathlib.Path('rar-inventory.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+          for item in report:
+              print(json.dumps(item,ensure_ascii=False))
+          PY
+      - name: Publicar inventário RAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruinas-perdidas-inventario-rar
+          path: rar-inventory.json
+          if-no-files-found: error
+          retention-days: 14
