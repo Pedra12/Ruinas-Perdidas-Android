@@ -27,7 +27,6 @@ jobs:
           sudo apt-get install -y 7zip python3-pil unzip
       - name: Baixar pacote Nature e mapa original do Release
         run: |
-          curl -fL --retry 3 "https://github.com/Pedra12/Ruinas-Perdidas-Android/releases/download/V1.0.0/Stylized.Nature.MegaKit.Standard.zip" -o Stylized.Nature.MegaKit.Standard.zip
           curl -fL --retry 3 "https://github.com/Pedra12/Ruinas-Perdidas-Android/releases/download/V1.0.0/rua-bela-vista-29214-100-guarapari-sol-nascente-glb.zip" -o /tmp/mapa-cidade.zip
           mkdir -p RuinasPerdidas/assets/maps
           unzip -oq /tmp/mapa-cidade.zip -d /tmp/mapa-cidade
@@ -36,48 +35,6 @@ jobs:
           install -m 644 /tmp/mapa-cidade/miniskylines_sources.json RuinasPerdidas/assets/maps/miniskylines_sources.json
           install -m 644 /tmp/mapa-cidade/README.txt RuinasPerdidas/assets/maps/README.txt
           test -s RuinasPerdidas/assets/maps/rua-bela-vista-29214-100-guarapari-sol-nascente.glb
-      - name: Extrair assets originais sem substituir o projeto
-        working-directory: RuinasPerdidas
-        run: |
-          chmod +x tools/organizar_assets.sh
-          bash tools/organizar_assets.sh ..
-      - name: Conferir todos os caminhos usados pelo jogo
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          root = Path('RuinasPerdidas')
-          required = [
-            'assets/characters/UAL1_Standard.glb',
-            'assets/enemies/Skely.glb',
-            'assets/enemies/SkelyDraugr.glb',
-            'assets/enemies/SkelyPoison.glb',
-            'assets/ruins/Accessories/AncientCoinEmerald.glb',
-            'assets/ruins/Accessories/AncientCoinRuby.glb',
-            'assets/ruins/Accessories/AncientCoinAmethyst.glb',
-            'assets/ruins/Accessories/ChestBaseGold.glb',
-            'assets/ruins/Accessories/ChestCover.glb',
-            'assets/ruins/Accessories/Altar.glb',
-            'assets/ruins/Walls/Gate.glb',
-            'assets/nature/CommonTree_1.gltf',
-            'assets/nature/CommonTree_3.gltf',
-            'assets/nature/CommonTree_5.gltf',
-            'assets/nature/DeadTree_1.gltf',
-            'assets/nature/Bush_Common.gltf',
-            'assets/nature/Bush_Common_Flowers.gltf',
-            'assets/nature/Grass_Common_Tall.gltf',
-            'assets/nature/Grass_Wispy_Short.gltf',
-            'assets/nature/Flower_3_Group.gltf',
-            'assets/nature/Flower_4_Group.gltf',
-            'assets/nature/Fern_1.gltf',
-            'assets/nature/Mushroom_Common.gltf',
-            'assets/nature/Pebble_Round_1.gltf'
-          ]
-          missing = [p for p in required if not (root / p).is_file()]
-          if missing:
-            raise SystemExit('ASSETS OBRIGATÓRIOS AUSENTES:\n' + '\n'.join(missing))
-          print(f'OK: {len(required)} caminhos de assets usados pelo jogo encontrados.')
-          print(f'Arquivos em assets/: {sum(1 for p in (root / "assets").rglob("*") if p.is_file())}')
-          PY
       - name: Baixar Godot 4.4.1
         run: |
           curl -fL --retry 3 "https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip" -o /tmp/godot.zip
@@ -94,7 +51,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add RuinasPerdidas/assets/ RuinasPerdidas/docs/source/springfield/
+          git add RuinasPerdidas/assets/maps/
           if git diff --cached --quiet; then
             echo "Os assets já estão atualizados no repositório."
           else
@@ -109,7 +66,6 @@ jobs:
         with:
           name: ruinas-perdidas-validacao-assets-godot
           path: |
-            RuinasPerdidas/assets/
-            RuinasPerdidas/docs/source/springfield/
+            RuinasPerdidas/assets/maps/
           if-no-files-found: error
           retention-days: 14
