@@ -40,61 +40,6 @@ var _buf_roll := 0.0
 var _buf_jump := 0.0
 var _last_stamina_sent := -1.0
 
-const UAL_TO_HUMAN := {
-    "root": "B-root",
-    "pelvis": "B-hips",
-    "spine_01": "B-spine",
-    "spine_02": "B-chest",
-    "neck_01": "B-neck",
-    "Head": "B-head",
-    "clavicle_l": "B-shoulder.L",
-    "upperarm_l": "B-upperArm.L",
-    "lowerarm_l": "B-forearm.L",
-    "hand_l": "B-hand.L",
-    "index_01_l": "B-indexFinger01.L",
-    "index_02_l": "B-indexFinger02.L",
-    "index_03_l": "B-indexFinger03.L",
-    "middle_01_l": "B-middleFinger01.L",
-    "middle_02_l": "B-middleFinger02.L",
-    "middle_03_l": "B-middleFinger03.L",
-    "pinky_01_l": "B-pinky01.L",
-    "pinky_02_l": "B-pinky02.L",
-    "pinky_03_l": "B-pinky03.L",
-    "ring_01_l": "B-ringFinger01.L",
-    "ring_02_l": "B-ringFinger02.L",
-    "ring_03_l": "B-ringFinger03.L",
-    "thumb_01_l": "B-thumb01.L",
-    "thumb_02_l": "B-thumb02.L",
-    "thumb_03_l": "B-thumb03.L",
-    "clavicle_r": "B-shoulder.R",
-    "upperarm_r": "B-upperArm.R",
-    "lowerarm_r": "B-forearm.R",
-    "hand_r": "B-hand.R",
-    "index_01_r": "B-indexFinger01.R",
-    "index_02_r": "B-indexFinger02.R",
-    "index_03_r": "B-indexFinger03.R",
-    "middle_01_r": "B-middleFinger01.R",
-    "middle_02_r": "B-middleFinger02.R",
-    "middle_03_r": "B-middleFinger03.R",
-    "pinky_01_r": "B-pinky01.R",
-    "pinky_02_r": "B-pinky02.R",
-    "pinky_03_r": "B-pinky03.R",
-    "ring_01_r": "B-ringFinger01.R",
-    "ring_02_r": "B-ringFinger02.R",
-    "ring_03_r": "B-ringFinger03.R",
-    "thumb_01_r": "B-thumb01.R",
-    "thumb_02_r": "B-thumb02.R",
-    "thumb_03_r": "B-thumb03.R",
-    "thigh_l": "B-thigh.L",
-    "calf_l": "B-shin.L",
-    "foot_l": "B-foot.L",
-    "ball_l": "B-toe.L",
-    "thigh_r": "B-thigh.R",
-    "calf_r": "B-shin.R",
-    "foot_r": "B-foot.R",
-    "ball_r": "B-toe.R"
-}
-
 
 func _ready() -> void:
     add_to_group("player")
@@ -111,11 +56,9 @@ func _ready() -> void:
     _model = Utils.instance_model(AssetPaths.PLAYER)
     add_child(_model)
     Utils.fit_height(self, _model, HEIGHT)
-    _apply_character_palette()
-    _setup_character_animations()
-    Utils.force_loops(_anim, ["Idle", "Walk", "Jog_Fwd", "Sprint", "Jump"])
-    _validate_player_setup()
-    _play("Idle")
+    _anim = Utils.find_anim_player(_model)
+    Utils.force_loops(_anim)
+    _play("Idle_Loop")
     Game.set_health(health, MAX_HEALTH)
     Game.set_stamina(stamina, MAX_STAMINA)
     if touch != null:
@@ -123,131 +66,6 @@ func _ready() -> void:
         touch.roll_pressed.connect(request_roll)
         touch.jump_pressed.connect(request_jump)
 
-
-
-
-func _validate_player_setup() -> void:
-    var mesh_nodes := _model.find_children("*", "MeshInstance3D", true, false)
-    var skeleton := _model.find_child("Skeleton3D", true, false) as Skeleton3D
-    if mesh_nodes.is_empty() or skeleton == null:
-        push_error("Modelo do jogador sem malha ou esqueleto válido.")
-        return
-    var required := ["Idle", "Walk", "Jog_Fwd", "Sprint", "Sword_Attack", "Roll", "Jump_Start", "Jump", "Jump_Land", "Hit_Chest", "Death01"]
-    for animation_name in required:
-        if not _anim.has_animation(animation_name):
-            push_error("Animação obrigatória ausente no jogador: " + animation_name)
-    var first_mesh := mesh_nodes[0] as MeshInstance3D
-    if first_mesh.mesh != null and first_mesh.mesh.get_surface_count() > 0:
-        var skin_material := first_mesh.get_surface_override_material(0) as StandardMaterial3D
-        if skin_material == null or skin_material.albedo_texture == null:
-            push_error("Textura de paleta do personagem não foi aplicada.")
-    print("PLAYER READY | meshes=", mesh_nodes.size(), " bones=", skeleton.get_bone_count(), " animations=", _anim.get_animation_list())
-
-
-func _apply_character_palette() -> void:
-    var palette := load(AssetPaths.PLAYER_PALETTE) as Texture2D
-    if palette == null:
-        push_warning("Paleta do personagem não encontrada.")
-        return
-    for node in _model.find_children("*", "MeshInstance3D", true, false):
-        var mesh_instance := node as MeshInstance3D
-        if mesh_instance == null or mesh_instance.mesh == null:
-            continue
-        for surface in mesh_instance.mesh.get_surface_count():
-            var material := StandardMaterial3D.new()
-            material.albedo_texture = palette
-            material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
-            material.roughness = 0.82
-            mesh_instance.set_surface_override_material(surface, material)
-
-
-func _setup_character_animations() -> void:
-    _anim = Utils.find_anim_player(_model)
-    if _anim == null:
-        _anim = AnimationPlayer.new()
-        _anim.name = "AnimationPlayer"
-        _anim.root_node = NodePath("..")
-        _model.add_child(_anim)
-
-    _copy_human_animation(AssetPaths.PLAYER_IDLE_ANIM, "Idle", true)
-    _copy_human_animation(AssetPaths.PLAYER_WALK_ANIM, "Walk", true)
-    _copy_human_animation(AssetPaths.PLAYER_RUN_ANIM, "Jog_Fwd", true)
-    _copy_human_animation(AssetPaths.PLAYER_SPRINT_ANIM, "Sprint", true)
-    _copy_ual_combat_animations()
-
-
-func _copy_human_animation(path: String, alias: String, loop: bool) -> void:
-    var packed := Utils.load_packed(path)
-    if packed == null:
-        return
-    var source_root := packed.instantiate()
-    var source_player := Utils.find_anim_player(source_root)
-    if source_player != null:
-        var names := source_player.get_animation_list()
-        if not names.is_empty():
-            var clip: Animation = source_player.get_animation(String(names[0])).duplicate(true)
-            _filter_clip_for_player_skeleton(clip)
-            if loop:
-                clip.loop_mode = Animation.LOOP_LINEAR
-            _store_animation(alias, clip)
-    source_root.free()
-
-
-func _copy_ual_combat_animations() -> void:
-    var packed := Utils.load_packed(AssetPaths.PLAYER_ANIMATION_SOURCE)
-    if packed == null:
-        return
-    var source_root := packed.instantiate()
-    var source_player := Utils.find_anim_player(source_root)
-    if source_player != null:
-        for animation_name in ["Sword_Attack", "Roll", "Jump_Start", "Jump", "Jump_Land", "Hit_Chest", "Death01"]:
-            if not source_player.has_animation(animation_name):
-                continue
-            var clip: Animation = source_player.get_animation(animation_name).duplicate(true)
-            _retarget_ual_clip(clip)
-            _filter_clip_for_player_skeleton(clip)
-            _store_animation(animation_name, clip)
-    source_root.free()
-
-
-func _retarget_ual_clip(clip: Animation) -> void:
-    for track in range(clip.get_track_count() - 1, -1, -1):
-        var source_path: NodePath = clip.track_get_path(track)
-        if source_path.get_subname_count() == 0:
-            clip.remove_track(track)
-            continue
-        var source_bone := String(source_path.get_subname(0))
-        if not UAL_TO_HUMAN.has(source_bone):
-            clip.remove_track(track)
-            continue
-        var target_bone: String = String(UAL_TO_HUMAN[source_bone])
-        clip.track_set_path(track, NodePath("Skeleton3D:" + target_bone))
-
-
-func _filter_clip_for_player_skeleton(clip: Animation) -> void:
-    var skeleton := _model.find_child("Skeleton3D", true, false) as Skeleton3D
-    if skeleton == null:
-        return
-    for track in range(clip.get_track_count() - 1, -1, -1):
-        var path: NodePath = clip.track_get_path(track)
-        if path.get_subname_count() == 0:
-            clip.remove_track(track)
-            continue
-        var bone_name := String(path.get_subname(0))
-        if skeleton.find_bone(bone_name) < 0:
-            clip.remove_track(track)
-
-
-func _store_animation(animation_name: String, clip: Animation) -> void:
-    var library: AnimationLibrary
-    if _anim.has_animation_library(""):
-        library = _anim.get_animation_library("")
-    else:
-        library = AnimationLibrary.new()
-        _anim.add_animation_library("", library)
-    if library.has_animation(animation_name):
-        library.remove_animation(animation_name)
-    library.add_animation(animation_name, clip)
 
 func is_dead() -> bool:
     return state == State.DEAD
@@ -334,7 +152,7 @@ func _state_move(delta: float) -> void:
     var speed: float = JOG_SPEED
     if sprint:
         speed = SPRINT_SPEED
-    elif mag < 0.90:
+    elif mag < 0.5:
         speed = WALK_SPEED
     var target_vel := Vector3.ZERO
     if mag > 0.05:
@@ -364,20 +182,20 @@ func _state_move(delta: float) -> void:
         if velocity.y > 1.0 and _anim != null and _anim.current_animation == "Jump_Start":
             pass
         else:
-            _play("Jump")
+            _play("Jump_Loop")
     elif mag > 0.05:
         if sprint:
-            _play("Sprint")
-        elif mag < 0.90:
-            _play("Walk")
+            _play("Sprint_Loop")
+        elif mag < 0.5:
+            _play("Walk_Loop")
         else:
-            _play("Jog_Fwd")
+            _play("Jog_Fwd_Loop")
         _step_timer -= delta
         if _step_timer <= 0.0:
             AudioManager.play_sfx("footstep", 0.12, -6.0)
             _step_timer = 0.28 if sprint else 0.38
     else:
-        _play("Idle")
+        _play("Idle_Loop")
 
 
 func _anim_len(anim_name: String, fallback: float) -> float:
