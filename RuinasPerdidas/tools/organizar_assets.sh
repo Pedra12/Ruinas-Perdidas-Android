@@ -27,7 +27,7 @@ mkdir -p "$PROJECT_DIR/docs/source/springfield"
 
 # Ruínas, acessórios, peças arquitetônicas e inimigos esqueléticos.
 unzip -oq "$SRC/RuinsGLB.zip" -d "$TMP/ruins"
-cp -a "$TMP/ruins/RuinsGLB/." "$OUT/ruins/"
+(cd "$TMP/ruins/RuinsGLB" && find . -type f -iname '*.glb' -exec cp --parents {} "$OUT/ruins/" \;)
 if [[ -d "$OUT/ruins/Skely" ]]; then
   find "$OUT/ruins/Skely" -maxdepth 1 -type f -iname '*.glb' -exec cp -f {} "$OUT/enemies/" \;
 fi
