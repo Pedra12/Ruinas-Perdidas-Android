@@ -17,12 +17,14 @@ need_file() {
 }
 
 need_file "$SRC/RuinsGLB.zip"
+need_file "$SRC/Human Basic Motions FREE.zip"
 need_file "$SRC/Universal Animation Library[Standard].zip"
 need_file "$SRC/KayKit_Character_Animations_1.1.zip"
 need_file "$SRC/mapa-springfield.zip"
 need_file "$SRC/Stylized.Nature.MegaKit.Standard.zip"
 
-mkdir -p "$OUT"/{characters,enemies,ruins,nature,kaykit,springfield}
+mkdir -p "$OUT"/{characters,enemies,ruins,nature,kaykit,springfield,human_motion}
+mkdir -p "$PROJECT_DIR/docs/source/human_basic_motions"
 mkdir -p "$PROJECT_DIR/docs/source/springfield"
 
 # Ruínas, acessórios, peças arquitetônicas e inimigos esqueléticos.
@@ -40,6 +42,30 @@ if [[ -z "$UAL" ]]; then
   exit 1
 fi
 cp -f "$UAL" "$OUT/characters/UAL1_Standard.glb"
+
+# Preservar o pacote humano completo como fonte e importar o modelo masculino
+# com animações básicas selecionadas para uso no jogo.
+unzip -oq "$SRC/Human Basic Motions FREE.zip" -d "$TMP/human"
+HUMAN_ROOT="$(find "$TMP/human" -type d -name 'Human Basic Motions FREE' -print -quit)"
+if [[ -z "$HUMAN_ROOT" ]]; then
+  echo "ERRO: pasta Human Basic Motions FREE não encontrada." >&2
+  exit 1
+fi
+cp -a "$HUMAN_ROOT/." "$PROJECT_DIR/docs/source/human_basic_motions/"
+touch "$PROJECT_DIR/docs/source/human_basic_motions/.gdignore"
+(
+  cd "$HUMAN_ROOT"
+  cp --parents \
+    "Models/HumanM_Model.fbx" \
+    "Textures/HumanAnimations_ColorPalette.png" \
+    "Animations/Male/Idles/HumanM@Idle01.fbx" \
+    "Animations/Male/Movement/Walk/HumanM@Walk01_Forward.fbx" \
+    "Animations/Male/Movement/Run/HumanM@Run01_Forward.fbx" \
+    "Animations/Male/Movement/Sprint/HumanM@Sprint01_Forward.fbx" \
+    "Animations/Male/Movement/Jump/HumanM@Jump01.fbx" \
+    "Animations/Male/Movement/Jump/HumanM@Fall01.fbx" \
+    "$OUT/human_motion/"
+)
 
 # Nature Kit: manter juntos glTF, BIN e texturas, pois os modelos usam caminhos relativos.
 unzip -oq "$SRC/Stylized.Nature.MegaKit.Standard.zip" 'glTF/*' -d "$TMP/nature"
