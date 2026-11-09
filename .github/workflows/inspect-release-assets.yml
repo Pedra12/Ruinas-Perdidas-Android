@@ -1,0 +1,43 @@
+name: Inspect release asset archive
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/inspect-release-assets.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download 104 MB asset from release
+        run: |
+          curl -fL --retry 3 \
+            "https://github.com/Pedra12/Ruinas-Perdidas-Android/releases/download/V1.0.0/Stylized.Nature.MegaKit.Standard.zip" \
+            -o /tmp/Stylized.Nature.MegaKit.Standard.zip
+          sha256sum /tmp/Stylized.Nature.MegaKit.Standard.zip
+      - name: Validate and inventory archive
+        run: |
+          python3 - <<'PY'
+          import zipfile, pathlib
+          p = pathlib.Path('/tmp/Stylized.Nature.MegaKit.Standard.zip')
+          report = [f'Archive: {p.name}', f'Size: {p.stat().st_size} bytes']
+          with zipfile.ZipFile(p) as z:
+              bad = z.testzip()
+              report.append(f'ZIP integrity: {"OK" if bad is None else "CORRUPT: " + bad}')
+              report.append(f'Entries: {len(z.infolist())}')
+              for item in z.infolist():
+                  if item.filename.lower().endswith(('.glb','.gltf','.bin','.png','.jpg','.jpeg','.webp','.tga')):
+                      report.append(f'{item.file_size:>12}  {item.filename}')
+          pathlib.Path('release-asset-inventory.txt').write_text('\n'.join(report), encoding='utf-8')
+          print('\n'.join(report))
+          PY
+      - name: Upload inventory
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruinas-perdidas-release-asset-inventory
+          path: release-asset-inventory.txt
+          retention-days: 14
