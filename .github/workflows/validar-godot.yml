@@ -91,6 +91,8 @@ jobs:
             echo "Os assets já estão atualizados no repositório."
           else
             git commit -m "Add extracted original game assets"
+            git fetch origin main
+            git rebase origin/main
             git push origin HEAD:main
           fi
       - name: Publicar assets extraídos e logs para auditoria
