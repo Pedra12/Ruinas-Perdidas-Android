@@ -2,6 +2,9 @@ extends SceneTree
 
 const PATHS := [
     "res://assets/characters/UAL1_Standard.glb",
+    "res://assets/enemies/Skely.glb",
+    "res://assets/enemies/SkelyDraugr.glb",
+    "res://assets/enemies/SkelyPoison.glb",
     "res://assets/kaykit/Mannequin_Large.glb",
     "res://assets/kaykit/Rig_Large_MovementBasic.glb",
     "res://assets/kaykit/Rig_Large_MovementAdvanced.glb",
