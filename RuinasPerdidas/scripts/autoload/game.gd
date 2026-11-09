@@ -12,10 +12,10 @@ signal victory
 const SETTINGS_PATH := "user://settings.cfg"
 const GEMS_REQUIRED := 3
 const QUALITY_NAMES: Array[String] = ["Baixa", "Média", "Alta"]
-const RENDER_SCALES: Array[float] = [0.6, 0.8, 1.0]
-const SHADOW_ATLAS: Array[int] = [1024, 2048, 4096]
-const SHADOW_DISTANCE: Array[float] = [0.0, 40.0, 60.0]
-const VEG_FACTOR: Array[float] = [0.45, 0.75, 1.0]
+const RENDER_SCALES: Array[float] = [0.58, 0.72, 0.88]
+const SHADOW_ATLAS: Array[int] = [512, 1024, 2048]
+const SHADOW_DISTANCE: Array[float] = [0.0, 0.0, 42.0]
+const VEG_FACTOR: Array[float] = [0.28, 0.48, 0.72]
 
 var gems := 0
 var coins := 0
@@ -25,7 +25,7 @@ var running := false
 var best_time := 0.0
 
 var quality := 1
-var fps_cap := 60
+var fps_cap := 30
 var sfx_volume := 0.8
 var music_volume := 0.5
 
@@ -105,14 +105,14 @@ func apply_quality() -> void:
         vp.msaa_3d = Viewport.MSAA_DISABLED
         vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA
     else:
-        vp.msaa_3d = Viewport.MSAA_2X
+        vp.msaa_3d = Viewport.MSAA_2X if quality >= 2 else Viewport.MSAA_DISABLED
         vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
     RenderingServer.directional_shadow_atlas_set_size(SHADOW_ATLAS[quality], true)
     Engine.max_fps = fps_cap
 
 
 func shadows_enabled() -> bool:
-    return quality > 0
+    return quality >= 2
 
 
 func shadow_distance() -> float:
@@ -138,7 +138,7 @@ func load_settings() -> void:
     if cfg.load(SETTINGS_PATH) != OK:
         return
     quality = clampi(int(cfg.get_value("video", "quality", 1)), 0, QUALITY_NAMES.size() - 1)
-    fps_cap = int(cfg.get_value("video", "fps_cap", 60))
+    fps_cap = int(cfg.get_value("video", "fps_cap", 30))
     sfx_volume = float(cfg.get_value("audio", "sfx", 0.8))
     music_volume = float(cfg.get_value("audio", "music", 0.5))
     best_time = float(cfg.get_value("progress", "best_time", 0.0))
