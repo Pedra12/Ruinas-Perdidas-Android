@@ -21,20 +21,36 @@ jobs:
     steps:
       - name: Baixar repositório
         uses: actions/checkout@v4
-      - name: Instalar ferramentas de extração e texturas
+      - name: Converter o novo mapa FBX para GLB
         run: |
           sudo apt-get update
-          sudo apt-get install -y 7zip python3-pil unzip
-      - name: Baixar pacote Nature e mapa original do Release
-        run: |
-          curl -fL --retry 3 "https://github.com/Pedra12/Ruinas-Perdidas-Android/releases/download/V1.0.0/rua-bela-vista-29214-100-guarapari-sol-nascente-glb.zip" -o /tmp/mapa-cidade.zip
-          mkdir -p RuinasPerdidas/assets/maps
-          unzip -oq /tmp/mapa-cidade.zip -d /tmp/mapa-cidade
-          install -m 644 /tmp/mapa-cidade/rua-bela-vista-29214-100-guarapari-sol-nascente.glb RuinasPerdidas/assets/maps/rua-bela-vista-29214-100-guarapari-sol-nascente.glb
-          install -m 644 /tmp/mapa-cidade/miniskylines_attribution.txt RuinasPerdidas/assets/maps/miniskylines_attribution.txt
-          install -m 644 /tmp/mapa-cidade/miniskylines_sources.json RuinasPerdidas/assets/maps/miniskylines_sources.json
-          install -m 644 /tmp/mapa-cidade/README.txt RuinasPerdidas/assets/maps/README.txt
-          test -s RuinasPerdidas/assets/maps/rua-bela-vista-29214-100-guarapari-sol-nascente.glb
+          sudo apt-get install -y curl xz-utils unzip
+          curl -fL --retry 3 "https://download.blender.org/release/Blender4.5/blender-4.5.3-linux-x64.tar.xz" -o /tmp/blender.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp
+          mkdir -p /tmp/zombie-pack RuinasPerdidas/assets/maps
+          python3 - <<'PY'
+          import zipfile
+          with zipfile.ZipFile('mobile-game-low-poly-zombie-pack-scane-free.zip') as z:
+              z.extract('source/Zombie-Pack.fbx', '/tmp/zombie-pack')
+              z.extract('textures/internal_ground_ao_texture.jpeg', '/tmp/zombie-pack')
+          PY
+          cat > /tmp/convert_zombie_pack.py <<'PY'
+          import bpy
+          bpy.ops.wm.read_factory_settings(use_empty=True)
+          bpy.ops.import_scene.fbx(filepath='/tmp/zombie-pack/source/Zombie-Pack.fbx')
+          bpy.ops.export_scene.gltf(
+              filepath='RuinasPerdidas/assets/maps/Zombie-Pack.glb',
+              export_format='GLB',
+              export_apply=True,
+              export_yup=True,
+              export_cameras=False,
+              export_lights=False,
+              export_animations=False
+          )
+          print('CONVERSAO CONCLUIDA: Zombie-Pack.glb')
+          PY
+          /tmp/blender-4.5.3-linux-x64/blender -b -t 2 --python /tmp/convert_zombie_pack.py
+          test -s RuinasPerdidas/assets/maps/Zombie-Pack.glb
       - name: Baixar Godot 4.4.1
         run: |
           curl -fL --retry 3 "https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip" -o /tmp/godot.zip
@@ -47,20 +63,8 @@ jobs:
           export GODOT=/tmp/godot/Godot_v4.4.1-stable_linux.x86_64
           bash RuinasPerdidas/tools/validar.sh
           "$GODOT" --headless --path RuinasPerdidas --quit-after 180 res://scenes/main.tscn
-      - name: Salvar assets extraídos no repositório
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add RuinasPerdidas/assets/maps/
-          if git diff --cached --quiet; then
-            echo "Os assets já estão atualizados no repositório."
-          else
-            git commit -m "Add extracted original game assets"
-            git stash push -u -m "temporary files from asset validation"
-            git fetch origin main
-            git rebase origin/main
-            git push origin HEAD:main
-          fi
+      - name: Confirmar artefato convertido
+        run: test -s RuinasPerdidas/assets/maps/Zombie-Pack.glb
       - name: Publicar assets extraídos e logs para auditoria
         uses: actions/upload-artifact@v4
         with:
