@@ -16,10 +16,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Instalar Blender
+      - name: Instalar Blender 4.5 LTS
         run: |
           sudo apt-get update
-          sudo apt-get install -y blender python3-numpy
+          sudo apt-get install -y curl xz-utils
+          curl -L https://download.blender.org/release/Blender4.5/blender-4.5.3-linux-x64.tar.xz -o /tmp/blender.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp
+          echo "/tmp/blender-4.5.3-linux-x64" >> "$GITHUB_PATH"
       - name: Inspecionar FBX sem alterar o projeto
         shell: bash
         run: |
@@ -76,7 +79,7 @@ jobs:
               for x in rows: f.write(json.dumps(x)+'\\n')
           print(json.dumps({k:v for k,v in report.items() if k!='objects'},indent=2))
           PY
-          blender -b -t 2 --python /tmp/inspect_fbx.py
+          /tmp/blender-4.5.3-linux-x64/blender -b -t 2 --python /tmp/inspect_fbx.py
       - name: Publicar relatório
         uses: actions/upload-artifact@v4
         with:
