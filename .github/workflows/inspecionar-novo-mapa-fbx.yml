@@ -1,0 +1,88 @@
+name: Inspecionar cena FBX do novo mapa
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'mobile-game-low-poly-zombie-pack-scane-free.zip'
+      - '.github/workflows/inspecionar-novo-mapa-fbx.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-fbx:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Instalar Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+      - name: Inspecionar FBX sem alterar o projeto
+        shell: bash
+        run: |
+          mkdir -p /tmp/mapa_fbx
+          python3 - <<'PY'
+          import zipfile
+          with zipfile.ZipFile('mobile-game-low-poly-zombie-pack-scane-free.zip') as z:
+              z.extract('source/Zombie-Pack.fbx', '/tmp/mapa_fbx')
+              z.extract('textures/internal_ground_ao_texture.jpeg', '/tmp/mapa_fbx')
+          PY
+          cat > /tmp/inspect_fbx.py <<'PY'
+          import bpy, json, math
+          from mathutils import Vector
+          bpy.ops.wm.read_factory_settings(use_empty=True)
+          bpy.ops.import_scene.fbx(filepath='/tmp/mapa_fbx/source/Zombie-Pack.fbx', automatic_bone_orientation=True)
+          depsgraph = bpy.context.evaluated_depsgraph_get()
+          rows = []
+          total_vertices = 0
+          total_polygons = 0
+          mins = [float('inf')]*3
+          maxs = [float('-inf')]*3
+          for obj in bpy.context.scene.objects:
+              row = {'name': obj.name, 'type': obj.type, 'parent': obj.parent.name if obj.parent else None}
+              if obj.type == 'MESH':
+                  mesh = obj.evaluated_get(depsgraph).to_mesh()
+                  total_vertices += len(mesh.vertices)
+                  total_polygons += len(mesh.polygons)
+                  corners = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
+                  if corners:
+                      row['bounds'] = {'min':[min(v[i] for v in corners) for i in range(3)], 'max':[max(v[i] for v in corners) for i in range(3)]}
+                      for i in range(3):
+                          mins[i] = min(mins[i], row['bounds']['min'][i])
+                          maxs[i] = max(maxs[i], row['bounds']['max'][i])
+                  row['vertices'] = len(mesh.vertices)
+                  row['polygons'] = len(mesh.polygons)
+                  row['materials'] = [m.name for m in obj.data.materials if m]
+                  obj.to_mesh_clear()
+              rows.append(row)
+          report = {
+              'file':'Zombie-Pack.fbx',
+              'object_count':len(rows),
+              'mesh_count':sum(1 for x in rows if x['type']=='MESH'),
+              'camera_count':sum(1 for x in rows if x['type']=='CAMERA'),
+              'light_count':sum(1 for x in rows if x['type']=='LIGHT'),
+              'armature_count':sum(1 for x in rows if x['type']=='ARMATURE'),
+              'total_vertices':total_vertices,
+              'total_polygons':total_polygons,
+              'scene_bounds': {'min':mins,'max':maxs,'size':[maxs[i]-mins[i] for i in range(3)]} if all(math.isfinite(x) for x in mins+maxs) else None,
+              'objects':rows
+          }
+          with open('novo-mapa-fbx-report.json','w') as f: json.dump(report,f,indent=2)
+          with open('novo-mapa-fbx-report.txt','w') as f:
+              f.write(json.dumps({k:v for k,v in report.items() if k!='objects'},indent=2)+'\\n\\nOBJECTS\\n')
+              for x in rows: f.write(json.dumps(x)+'\\n')
+          print(json.dumps({k:v for k,v in report.items() if k!='objects'},indent=2))
+          PY
+          blender -b -t 2 --python /tmp/inspect_fbx.py
+      - name: Publicar relatório
+        uses: actions/upload-artifact@v4
+        with:
+          name: inspecao-novo-mapa-zombie-pack
+          path: |
+            novo-mapa-fbx-report.json
+            novo-mapa-fbx-report.txt
+          if-no-files-found: error
+          retention-days: 14
