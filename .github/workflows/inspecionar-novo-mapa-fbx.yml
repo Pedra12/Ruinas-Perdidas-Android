@@ -19,7 +19,7 @@ jobs:
       - name: Instalar Blender
         run: |
           sudo apt-get update
-          sudo apt-get install -y blender
+          sudo apt-get install -y blender python3-numpy
       - name: Inspecionar FBX sem alterar o projeto
         shell: bash
         run: |
