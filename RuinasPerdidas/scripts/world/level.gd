@@ -4,9 +4,7 @@ extends Node3D
 ## Orçamento mobile: ~150 draw calls, MultiMesh em cenários repetidos, 1 luz com sombra.
 
 const WORLD := 100.0
-const CITY_MAP_PATH := "res://assets/maps/rua-bela-vista-29214-100-guarapari-sol-nascente.glb"
-const CITY_MAP_WIDTH_METERS := 6296.701339
-const CITY_MAP_DEPTH_METERS := 6295.707559
+const CITY_MAP_PATH := "res://assets/maps/Zombie-Pack.glb"
 const START_POS := Vector3(0.0, 0.3, 0.0)
 const BOSS_POS := Vector3(0.0, 0.0, -46.0)
 const CHEST_POS := Vector3(0.0, 0.0, -57.0)
@@ -169,41 +167,54 @@ func _build_environment() -> void:
 ## O mapa não lança sombras para reduzir custo no Android; o sol do jogo mantém sombras.
 func _build_city_map() -> void:
     if not ResourceLoader.exists(CITY_MAP_PATH):
-        push_warning("Mapa original ainda não instalado em: %s" % CITY_MAP_PATH)
+        push_error("O novo mapa 3D não foi encontrado: %s" % CITY_MAP_PATH)
         return
     var packed: PackedScene = load(CITY_MAP_PATH)
     if packed == null:
-        push_error("Não foi possível importar o GLB original: %s" % CITY_MAP_PATH)
+        push_error("Não foi possível importar o novo mapa: %s" % CITY_MAP_PATH)
         return
     var city := packed.instantiate() as Node3D
     if city == null:
-        push_error("O GLB do mapa não gerou uma cena Node3D.")
+        push_error("O novo mapa não gerou uma cena Node3D.")
         return
-    city.name = "MapaOriginal_RuaBelaVista_Guarapari"
+    city.name = "NovoMapa_ZombiePack_Exploracao"
     add_child(city)
 
-    # O pacote Mini Skyline informa que a seleção geográfica mede
-    # 6296.701339 x 6295.707559 metros. O GLB é exportado como miniatura
-    # de impressão (aprox. 160 mm de largura), portanto não pode usar escala 1000.
-    # Medimos a geometria importada e calculamos a escala uniforme em runtime.
-    var source_bounds: AABB = Utils.aabb_in(city, city)
-    if source_bounds.size.x <= 0.001 or source_bounds.size.z <= 0.001:
-        push_error("Não foi possível medir os limites do GLB original.")
-        city.queue_free()
-        return
-    var scale_x: float = CITY_MAP_WIDTH_METERS / source_bounds.size.x
-    var scale_z: float = CITY_MAP_DEPTH_METERS / source_bounds.size.z
-    var calibrated_scale: float = (scale_x + scale_z) * 0.5
-    city.scale = Vector3.ONE * calibrated_scale
-    city.position.y = -source_bounds.position.y * calibrated_scale
-    print("CALIBRACAO MAPA | AABB GLB: %.6f x %.6f x %.6f | escala: %.2f | dimensao final: %.1f x %.1f m" % [source_bounds.size.x, source_bounds.size.y, source_bounds.size.z, calibrated_scale, source_bounds.size.x * calibrated_scale, source_bounds.size.z * calibrated_scale])
+    # Uma única malha de colisão estática reúne a geometria do cenário.
+    # Isso permite caminhar sobre o terreno e encontrar paredes/edifícios,
+    # sem criar mais de mil corpos físicos separados.
+    var collision_faces := PackedVector3Array()
+    var inverse_map: Transform3D = city.global_transform.affine_inverse()
+    for node in city.find_children("*", "MeshInstance3D", true, false):
+        var mesh_instance := node as MeshInstance3D
+        if mesh_instance == null or mesh_instance.mesh == null:
+            continue
+        var local_faces: PackedVector3Array = mesh_instance.mesh.get_faces()
+        if local_faces.is_empty():
+            continue
+        var to_map: Transform3D = inverse_map * mesh_instance.global_transform
+        for vertex in local_faces:
+            collision_faces.append(to_map * vertex)
 
+    if collision_faces.size() >= 3:
+        var map_body := StaticBody3D.new()
+        map_body.name = "ColisaoUnificada_NovoMapa"
+        map_body.collision_layer = 1
+        map_body.collision_mask = 0
+        var map_shape := ConcavePolygonShape3D.new()
+        map_shape.set_faces(collision_faces)
+        var map_collision := CollisionShape3D.new()
+        map_collision.shape = map_shape
+        map_body.add_child(map_collision)
+        add_child(map_body)
+        print("NOVO MAPA | colisão unificada criada com %d vértices" % collision_faces.size())
+    else:
+        push_warning("O mapa foi carregado, mas não foi possível gerar colisões da geometria.")
     for node in city.find_children("*", "GeometryInstance3D", true, false):
         var geometry := node as GeometryInstance3D
         if geometry != null:
             geometry.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-    print("Mapa original carregado: %s | escala geográfica calibrada | sombras próprias desligadas" % CITY_MAP_PATH)
-
+    print("Novo mapa Zombie-Pack carregado: %s" % CITY_MAP_PATH)
 
 ## Piso de colisão amplo e invisível. Sem muros: o jogador pode percorrer o cenário inteiro.
 func _build_exploration_ground() -> void:
@@ -212,10 +223,10 @@ func _build_exploration_ground() -> void:
     floor_body.collision_layer = 1
     floor_body.collision_mask = 0
     var shape := BoxShape3D.new()
-    shape.size = Vector3(100000.0, 2.0, 100000.0)
+    shape.size = Vector3(140.0, 2.0, 140.0)
     var collision := CollisionShape3D.new()
     collision.shape = shape
-    collision.position.y = -1.0
+    collision.position.y = -2.0
     floor_body.add_child(collision)
     add_child(floor_body)
 
