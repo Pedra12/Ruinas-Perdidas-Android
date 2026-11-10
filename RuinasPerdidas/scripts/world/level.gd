@@ -1,6 +1,6 @@
 extends Node3D
 ## Nível único: floresta -> ruínas -> pátio do templo (chefe + baú).
-## Todo o mundo é montado por código usando os assets em res://assets.
+## Cenário principal: mapa Zombie-Pack convertido para GLB, com personagem original preservado.
 ## Orçamento mobile: ~150 draw calls, MultiMesh em cenários repetidos, 1 luz com sombra.
 
 const WORLD := 100.0
