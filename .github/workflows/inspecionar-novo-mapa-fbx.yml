@@ -34,7 +34,7 @@ jobs:
           import bpy, json, math
           from mathutils import Vector
           bpy.ops.wm.read_factory_settings(use_empty=True)
-          bpy.ops.import_scene.fbx(filepath='/tmp/mapa_fbx/source/Zombie-Pack.fbx', automatic_bone_orientation=True)
+          bpy.ops.import_scene.fbx(filepath='/tmp/mapa_fbx/source/Zombie-Pack.fbx')
           depsgraph = bpy.context.evaluated_depsgraph_get()
           rows = []
           total_vertices = 0
